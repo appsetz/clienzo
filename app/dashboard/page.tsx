@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getClients, getProjects, getPayments, Client, Project, Payment } from "@/lib/firebase/db";
 import { Users, FolderKanban, CreditCard, TrendingUp, AlertCircle, Clock } from "lucide-react";
@@ -19,13 +19,7 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(true);
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user, userProfile]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -83,7 +77,13 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userProfile]);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
 
   const activeProjects = projects.filter((p) => p.status === "active");
   const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getClients, createClient, updateClient, deleteClient, Client } from "@/lib/firebase/db";
 import { Plus, Edit2, Trash2, Mail, Phone, User } from "lucide-react";
@@ -18,13 +18,7 @@ export default function ClientsPage() {
   const [error, setError] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadClients();
-    }
-  }, [user]);
-
-  const loadClients = async () => {
+  const loadClients = useCallback(async () => {
     if (!user) return;
     try {
       const data = await getClients(user.uid);
@@ -34,7 +28,13 @@ export default function ClientsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadClients();
+    }
+  }, [user, loadClients]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -129,7 +129,7 @@ export default function ClientsPage() {
       {!canAddMore && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-orange-800">
-            You've reached your free client limit.{" "}
+            You&apos;ve reached your free client limit.{" "}
             <Link href="/upgrade" className="font-semibold underline">
               Upgrade to Pro
             </Link>{" "}

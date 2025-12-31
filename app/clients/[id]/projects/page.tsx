@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getClient, Client } from "@/lib/firebase/db";
@@ -17,13 +17,7 @@ export default function ClientProjectsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user && params.id) {
-      loadData();
-    }
-  }, [user, params.id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user || !params.id) return;
     try {
       const clientData = await getClient(params.id as string);
@@ -40,7 +34,13 @@ export default function ClientProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, params.id, router]);
+
+  useEffect(() => {
+    if (user && params.id) {
+      loadData();
+    }
+  }, [user, params.id, loadData]);
 
   if (loading) {
     return (
@@ -64,7 +64,7 @@ export default function ClientProjectsPage() {
           <ArrowLeft className="w-5 h-5" />
         </Link>
         <div className="flex-1">
-          <h1 className="text-3xl font-bold text-gray-900">{client.name}'s Projects</h1>
+          <h1 className="text-3xl font-bold text-gray-900">{client.name}&apos;s Projects</h1>
           <p className="text-gray-600 mt-1">{projects.length} {projects.length === 1 ? "project" : "projects"}</p>
         </div>
         <Link
