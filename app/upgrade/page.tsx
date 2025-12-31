@@ -20,7 +20,7 @@ export default function UpgradePage() {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">You&apos;re already on {userProfile.plan} plan!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">You&apos;re already on {userProfile?.plan || "free"} plan!</h1>
           <Link
             href="/dashboard"
             className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
