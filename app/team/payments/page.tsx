@@ -235,7 +235,7 @@ export default function TeamPaymentsPage() {
   }).sort((a, b) => b.value - a.value); // Sort by total amount (highest first)
 
   // Monthly trend (last 6 months)
-  const monthlyTrend = [];
+  const monthlyTrend: Array<{ month: string; amount: number; count: number }> = [];
   for (let i = 5; i >= 0; i--) {
     const monthStart = startOfMonth(subMonths(new Date(), i));
     const monthEnd = endOfMonth(monthStart);
