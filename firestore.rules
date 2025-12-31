@@ -1,0 +1,217 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ============================================
+    // HELPER FUNCTIONS
+    // ============================================
+    
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    // Check if user owns the resource
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+    
+    // Check if user owns the resource by user_id field
+    function ownsResource() {
+      return isAuthenticated() && resource.data.user_id == request.auth.uid;
+    }
+    
+    // Check if user is creating resource with their own user_id
+    function ownsNewResource() {
+      return isAuthenticated() && request.resource.data.user_id == request.auth.uid;
+    }
+    
+    // Validate user_id cannot be changed
+    function userIdUnchanged() {
+      return request.resource.data.user_id == resource.data.user_id;
+    }
+    
+    // ============================================
+    // USERS COLLECTION
+    // ============================================
+    
+    match /users/{userId} {
+      // Users can only read their own profile
+      allow read: if isOwner(userId);
+      
+      // Users can create their own profile
+      allow create: if isAuthenticated() && 
+        request.auth.uid == userId &&
+        request.resource.data.keys().hasAll(['id', 'name', 'email', 'plan', 'createdAt']) &&
+        request.resource.data.id is string &&
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        request.resource.data.plan in ['free', 'pro', 'agency'] &&
+        request.resource.data.createdAt is timestamp;
+      
+      // Users can update their own profile
+      allow update: if isOwner(userId) &&
+        // Prevent changing user_id and immutable fields
+        request.resource.data.id == resource.data.id &&
+        // Allow plan changes (upgrade flow) - plan can be changed from free to pro/agency
+        (request.resource.data.plan == resource.data.plan || 
+         (resource.data.plan == 'free' && request.resource.data.plan in ['pro', 'agency'])) &&
+        // Validate required fields
+        request.resource.data.name is string &&
+        request.resource.data.email is string &&
+        request.resource.data.plan in ['free', 'pro', 'agency'] &&
+        // Freelancer optional fields validation
+        (!('phone' in request.resource.data) || request.resource.data.phone is string) &&
+        (!('location' in request.resource.data) || request.resource.data.location is string) &&
+        (!('bio' in request.resource.data) || request.resource.data.bio is string) &&
+        // Agency optional fields validation
+        (!('agencyName' in request.resource.data) || request.resource.data.agencyName is string) &&
+        (!('agencyPhone' in request.resource.data) || request.resource.data.agencyPhone is string) &&
+        (!('agencyEmail' in request.resource.data) || request.resource.data.agencyEmail is string) &&
+        (!('agencyAddress' in request.resource.data) || request.resource.data.agencyAddress is string) &&
+        (!('agencyWebsite' in request.resource.data) || request.resource.data.agencyWebsite is string) &&
+        (!('agencyDescription' in request.resource.data) || request.resource.data.agencyDescription is string) &&
+        (!('numberOfEmployees' in request.resource.data) || request.resource.data.numberOfEmployees is string) &&
+        // System fields validation
+        (!('profileComplete' in request.resource.data) || request.resource.data.profileComplete is bool) &&
+        (!('userType' in request.resource.data) || request.resource.data.userType in ['freelancer', 'agency']);
+      
+      // Users can delete their own profile
+      allow delete: if isOwner(userId);
+    }
+    
+    // ============================================
+    // CLIENTS COLLECTION
+    // ============================================
+    
+    match /clients/{clientId} {
+      // Users can read their own clients
+      allow read: if isAuthenticated() && ownsResource();
+      
+      // Users can create clients with their own user_id
+      allow create: if isAuthenticated() && ownsNewResource() &&
+        // Validate required fields
+        request.resource.data.user_id is string &&
+        request.resource.data.name is string &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('email' in request.resource.data) || request.resource.data.email is string) &&
+        (!('phone' in request.resource.data) || request.resource.data.phone is string) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string);
+      
+      // Users can update their own clients
+      allow update: if isAuthenticated() && ownsResource() &&
+        // Prevent changing user_id
+        userIdUnchanged() &&
+        // Validate required fields
+        request.resource.data.name is string &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('email' in request.resource.data) || request.resource.data.email is string) &&
+        (!('phone' in request.resource.data) || request.resource.data.phone is string) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string);
+      
+      // Users can delete their own clients
+      allow delete: if isAuthenticated() && ownsResource();
+    }
+    
+    // ============================================
+    // PROJECTS COLLECTION
+    // ============================================
+    
+    match /projects/{projectId} {
+      // Users can read their own projects
+      allow read: if isAuthenticated() && ownsResource();
+      
+      // Users can create projects with their own user_id
+      allow create: if isAuthenticated() && ownsNewResource() &&
+        // Validate required fields
+        request.resource.data.user_id is string &&
+        request.resource.data.client_id is string &&
+        request.resource.data.name is string &&
+        request.resource.data.status in ['active', 'completed', 'on-hold', 'cancelled'] &&
+        request.resource.data.total_amount is number &&
+        request.resource.data.total_amount >= 0 &&
+        request.resource.data.total_amount <= 999999999 &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('deadline' in request.resource.data) || request.resource.data.deadline is timestamp || request.resource.data.deadline == null) &&
+        (!('reminder_date' in request.resource.data) || request.resource.data.reminder_date is timestamp || request.resource.data.reminder_date == null) &&
+        (!('completed_date' in request.resource.data) || request.resource.data.completed_date is timestamp || request.resource.data.completed_date == null);
+      
+      // Users can update their own projects
+      allow update: if isAuthenticated() && ownsResource() &&
+        // Prevent changing user_id and client_id
+        userIdUnchanged() &&
+        request.resource.data.client_id == resource.data.client_id &&
+        // Validate required fields
+        request.resource.data.name is string &&
+        request.resource.data.status in ['active', 'completed', 'on-hold', 'cancelled'] &&
+        request.resource.data.total_amount is number &&
+        request.resource.data.total_amount >= 0 &&
+        request.resource.data.total_amount <= 999999999 &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('deadline' in request.resource.data) || request.resource.data.deadline is timestamp || request.resource.data.deadline == null) &&
+        (!('reminder_date' in request.resource.data) || request.resource.data.reminder_date is timestamp || request.resource.data.reminder_date == null) &&
+        (!('completed_date' in request.resource.data) || request.resource.data.completed_date is timestamp || request.resource.data.completed_date == null);
+      
+      // Users can delete their own projects
+      allow delete: if isAuthenticated() && ownsResource();
+    }
+    
+    // ============================================
+    // PAYMENTS COLLECTION
+    // ============================================
+    
+    match /payments/{paymentId} {
+      // Users can read their own payments
+      allow read: if isAuthenticated() && ownsResource();
+      
+      // Users can create payments with their own user_id
+      allow create: if isAuthenticated() && ownsNewResource() &&
+        // Validate required fields
+        request.resource.data.user_id is string &&
+        request.resource.data.project_id is string &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 999999999 &&
+        request.resource.data.date is timestamp &&
+        request.resource.data.createdAt is timestamp &&
+        // Validate optional fields
+        (!('notes' in request.resource.data) || request.resource.data.notes is string) &&
+        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null);
+      
+      // Users can update their own payments
+      allow update: if isAuthenticated() && ownsResource() &&
+        // Prevent changing user_id and project_id
+        userIdUnchanged() &&
+        request.resource.data.project_id == resource.data.project_id &&
+        // Prevent changing createdAt
+        request.resource.data.createdAt == resource.data.createdAt &&
+        // Validate required fields
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 999999999 &&
+        request.resource.data.date is timestamp &&
+        // Validate optional fields
+        (!('notes' in request.resource.data) || request.resource.data.notes is string) &&
+        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null);
+      
+      // Users can delete their own payments
+      allow delete: if isAuthenticated() && ownsResource();
+    }
+    
+    // ============================================
+    // DENY ALL OTHER COLLECTIONS
+    // ============================================
+    
+    // Deny access to any other collections
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

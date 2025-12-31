@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://clienzo.com/sitemap.xml
+
