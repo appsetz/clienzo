@@ -24,7 +24,7 @@ export default function RevenueIntelligence({
 
   // Calculate last week revenue (7 days)
   const lastWeekRevenue = useMemo(() => {
-    if (userPlan === "free") return [];
+    if (userPlan === "free") return 0;
     
     const weekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
     const weekEnd = endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
@@ -121,7 +121,7 @@ export default function RevenueIntelligence({
   }, [payments, projects, clients, userPlan]);
 
   const maxRevenue = useMemo(() => {
-    if (analyticsPeriod === "week") return lastWeekRevenue || 1;
+    if (analyticsPeriod === "week") return Math.max(lastWeekRevenue, 1);
     if (analyticsPeriod === "month") {
       return monthlyRevenue.length > 0
         ? Math.max(...monthlyRevenue.map((m) => m.revenue))
@@ -248,8 +248,8 @@ export default function RevenueIntelligence({
                         <div
                           className="w-full bg-gradient-to-t from-purple-600 to-pink-600 rounded-t transition-all hover:opacity-80"
                           style={{
-                            height: `${(month.revenue / maxRevenue) * 100}%`,
-                            minHeight: month.revenue > 0 ? "4px" : "0",
+                            height: `${((Number(month.revenue) || 0) / (Number(maxRevenue) || 1)) * 100}%`,
+                            minHeight: (Number(month.revenue) || 0) > 0 ? "4px" : "0",
                           }}
                           title={`${month.month}: ₹${month.revenue.toLocaleString()}`}
                         />
@@ -285,8 +285,8 @@ export default function RevenueIntelligence({
                         <div
                           className="w-full bg-gradient-to-t from-purple-600 to-pink-600 rounded-t transition-all hover:opacity-80"
                           style={{
-                            height: `${(year.revenue / maxRevenue) * 100}%`,
-                            minHeight: year.revenue > 0 ? "4px" : "0",
+                            height: `${((Number(year.revenue) || 0) / (Number(maxRevenue) || 1)) * 100}%`,
+                            minHeight: (Number(year.revenue) || 0) > 0 ? "4px" : "0",
                           }}
                           title={`${year.year}: ₹${year.revenue.toLocaleString()}`}
                         />
