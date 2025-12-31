@@ -6,9 +6,10 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getProject, updateProject, Project } from "@/lib/firebase/db";
 import { getClient, Client } from "@/lib/firebase/db";
 import { getPayments, Payment, createPayment, deletePayment } from "@/lib/firebase/db";
-import { ArrowLeft, Edit2, DollarSign, Calendar, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Edit2, DollarSign, Calendar, Plus, Trash2, FileText } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
+import InvoiceGenerator from "@/components/InvoiceGenerator";
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -25,6 +26,8 @@ export default function ProjectDetailPage() {
     notes: "",
   });
   const [error, setError] = useState("");
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<any>(null);
 
   const loadData = useCallback(async () => {
     if (!user || !params.id) return;
@@ -167,9 +170,39 @@ export default function ProjectDetailPage() {
         <div>
           <div className="flex items-center justify-between mb-2">
             <p className="text-sm font-medium text-gray-700">Payment Progress</p>
-            <p className="text-sm font-semibold text-gray-900">
-              ₹{totalPaid.toLocaleString()} / ₹{project.total_amount.toLocaleString()}
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="text-sm font-semibold text-gray-900">
+                ₹{totalPaid.toLocaleString()} / ₹{project.total_amount.toLocaleString()}
+              </p>
+              {client && (
+                <button
+                  onClick={() => {
+                    const invoiceNumber = `INV-${project.id?.slice(0, 8).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+                    setInvoiceData({
+                      invoiceNumber,
+                      invoiceDate: new Date(),
+                      client,
+                      project,
+                      items: [
+                        {
+                          description: `Project: ${project.name}`,
+                          amount: project.total_amount,
+                        },
+                      ],
+                      totalAmount: project.total_amount,
+                      paidAmount: totalPaid,
+                      pendingAmount: pending,
+                    });
+                    setShowInvoice(true);
+                  }}
+                  className="flex items-center gap-1 px-3 py-1.5 bg-purple-50 text-purple-600 rounded-lg text-sm font-medium hover:bg-purple-100 transition"
+                  title="Generate Invoice for Total Amount"
+                >
+                  <FileText className="w-4 h-4" />
+                  Invoice
+                </button>
+              )}
+            </div>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-3 mb-2">
             <div
@@ -217,11 +250,11 @@ export default function ProjectDetailPage() {
                 key={payment.id}
                 className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-purple-300 hover:shadow-md transition"
               >
-                <div className="flex items-center gap-4">
+                <div className="flex items-center gap-4 flex-1">
                   <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
                     <DollarSign className="w-6 h-6 text-green-600" />
                   </div>
-                  <div>
+                  <div className="flex-1">
                     <p className="font-semibold text-gray-900">₹{payment.amount.toLocaleString()}</p>
                     <p className="text-sm text-gray-600">
                       {format(new Date(payment.date), "MMM dd, yyyy")}
@@ -229,12 +262,48 @@ export default function ProjectDetailPage() {
                     {payment.notes && <p className="text-sm text-gray-500 mt-1">{payment.notes}</p>}
                   </div>
                 </div>
-                <button
-                  onClick={() => handleDeletePayment(payment.id!)}
-                  className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                >
-                  <Trash2 className="w-4 h-4" />
-                </button>
+                <div className="flex items-center gap-2">
+                  {client && (
+                    <button
+                      onClick={() => {
+                        // Calculate total paid from all payments
+                        const allPaymentsTotal = payments.reduce((sum, p) => sum + p.amount, 0);
+                        const remaining = project.total_amount - allPaymentsTotal;
+                        
+                        const invoiceNumber = `INV-${payment.id?.slice(0, 8).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+                        setInvoiceData({
+                          invoiceNumber,
+                          invoiceDate: new Date(payment.date),
+                          client,
+                          project,
+                          items: [
+                            {
+                              description: `Payment for: ${project.name}`,
+                              amount: payment.amount,
+                              date: payment.date,
+                              paymentType: payment.payment_type || "payment",
+                            },
+                          ],
+                          totalAmount: project.total_amount, // Total project amount
+                          paidAmount: allPaymentsTotal, // Total paid from all payments
+                          pendingAmount: remaining, // Remaining amount
+                          notes: payment.notes,
+                        });
+                        setShowInvoice(true);
+                      }}
+                      className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
+                      title="Generate Invoice for Payment"
+                    >
+                      <FileText className="w-4 h-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={() => handleDeletePayment(payment.id!)}
+                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
@@ -243,8 +312,8 @@ export default function ProjectDetailPage() {
 
       {/* Payment Modal */}
       {showPaymentModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 my-auto max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Add Payment</h2>
             <form onSubmit={handleAddPayment} className="space-y-4">
               <div>
@@ -312,6 +381,19 @@ export default function ProjectDetailPage() {
             </form>
           </div>
         </div>
+      )}
+
+      {/* Invoice Generator */}
+      {client && (
+        <InvoiceGenerator
+          isOpen={showInvoice}
+          onClose={() => {
+            setShowInvoice(false);
+            setInvoiceData(null);
+          }}
+          invoiceData={invoiceData}
+          userProfile={userProfile}
+        />
       )}
     </div>
   );

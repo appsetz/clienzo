@@ -29,14 +29,14 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
       {/* Header - Sticky */}
       <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-6 py-4 flex items-center justify-between">
+        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Image
             src="/images/clienzo-logo.png"
             alt="Clienzo"
-            width={120}
-            height={40}
-            className="object-contain"
+            width={100}
+            height={33}
+            className="object-contain w-20 sm:w-[120px]"
           />
         </div>
         <nav className="hidden md:flex items-center gap-6">
@@ -53,16 +53,16 @@ export default function Home() {
             Pricing
           </Link>
         </nav>
-        <div className="flex items-center gap-2 md:gap-4">
+        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
           <Link
             href="/login"
-            className="px-3 md:px-4 py-2 text-sm md:text-base text-gray-700 hover:text-purple-600 transition"
+            className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base text-gray-700 hover:text-purple-600 transition whitespace-nowrap"
           >
             Login
           </Link>
           <Link
             href="/signup"
-            className="px-4 md:px-6 py-2 text-sm md:text-base bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition"
+            className="px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition whitespace-nowrap"
           >
             Get Started
           </Link>
@@ -71,25 +71,25 @@ export default function Home() {
       </header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 py-8 md:py-20">
+      <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-20">
         <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center">
-          <div className="text-left w-full">
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 mb-3 md:mb-4 font-medium">
+          <div className="text-left w-full order-2 md:order-1">
+            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-600 mb-2 sm:mb-3 md:mb-4 font-medium">
               Hello agency owners and freelancers 👋
             </p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-4 md:mb-6 leading-tight">
+            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight">
               Client Management
               <br />
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
                 Made Easy
               </span>
             </h1>
-            <p className="text-sm sm:text-base md:text-lg lg:text-xl text-gray-600 mb-4 md:mb-8">
+            <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4 sm:mb-6 md:mb-8">
               Simplify client and project management for freelancers and agencies.
             </p>
             <Link
               href="/signup"
-              className="inline-flex items-center gap-2 px-5 md:px-8 py-2.5 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm md:text-lg font-semibold hover:shadow-xl transition mb-4 md:mb-8 w-full sm:w-auto justify-center sm:justify-start"
+              className="inline-flex items-center gap-2 px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm sm:text-base md:text-lg font-semibold hover:shadow-xl transition mb-4 sm:mb-6 md:mb-8 w-full sm:w-auto justify-center sm:justify-start"
             >
               Get Started
               <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />

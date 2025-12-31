@@ -15,9 +15,9 @@ export default function UpgradeLayout({
       <ProtectedRoute>
         <div className="flex min-h-screen bg-gray-50">
           <Sidebar />
-          <div className="flex-1 ml-64">
+          <div className="flex-1 md:ml-64 w-full">
             <Header />
-            <main className="pt-16 p-6">{children}</main>
+            <main className="pt-16 p-3 sm:p-4 md:p-6 max-w-full overflow-x-hidden">{children}</main>
           </div>
         </div>
       </ProtectedRoute>

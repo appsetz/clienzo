@@ -100,7 +100,7 @@ export default function Header() {
   return (
     <>
       <MobileMenu />
-      <header className="h-16 bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 flex items-center justify-between px-4 md:px-6 z-30">
+      <header className="h-16 bg-white border-b border-gray-200 fixed top-0 right-0 left-0 md:left-64 flex items-center justify-between px-3 sm:px-4 md:px-6 z-30">
         <div className="flex-1"></div>
         <div className="flex items-center gap-2 md:gap-4">
         <button

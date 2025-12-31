@@ -123,7 +123,7 @@ export default function ProfilePage() {
   const isAgency = userProfile.userType === "agency";
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div className="bg-white rounded-lg shadow-sm p-4 mb-6 sticky top-20 z-40">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div className="flex-1">

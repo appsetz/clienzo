@@ -4,8 +4,10 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPayments, createPayment, deletePayment, Payment } from "@/lib/firebase/db";
 import { getProjects, Project } from "@/lib/firebase/db";
-import { Plus, Trash2, DollarSign, Calendar } from "lucide-react";
+import { Plus, Trash2, DollarSign, Calendar, FileText } from "lucide-react";
 import { format } from "date-fns";
+import InvoiceGenerator from "@/components/InvoiceGenerator";
+import { getClient } from "@/lib/firebase/db";
 
 export default function PaymentsPage() {
   const { user, userProfile } = useAuth();
@@ -21,6 +23,8 @@ export default function PaymentsPage() {
     payment_type: "" as "advance" | "partial" | "final" | "",
   });
   const [error, setError] = useState("");
+  const [showInvoice, setShowInvoice] = useState(false);
+  const [invoiceData, setInvoiceData] = useState<any>(null);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -113,6 +117,50 @@ export default function PaymentsPage() {
     return project?.name || "Unknown Project";
   };
 
+  const handleGenerateInvoice = async (payment: Payment) => {
+    try {
+      const project = projects.find((p) => p.id === payment.project_id);
+      if (!project) {
+        alert("Project not found for this payment");
+        return;
+      }
+      const client = await getClient(project.client_id);
+      if (!client) {
+        alert("Client not found for this payment");
+        return;
+      }
+
+      // Get all payments for this project to calculate totals
+      const allProjectPayments = payments.filter((p) => p.project_id === payment.project_id);
+      const totalPaid = allProjectPayments.reduce((sum, p) => sum + p.amount, 0);
+      const pending = project.total_amount - totalPaid;
+
+      const invoiceNumber = `INV-${payment.id?.slice(0, 8).toUpperCase()}-${Date.now().toString().slice(-6)}`;
+      setInvoiceData({
+        invoiceNumber,
+        invoiceDate: new Date(payment.date),
+        client,
+        project,
+        items: [
+          {
+            description: `Payment for: ${project.name}`,
+            amount: payment.amount,
+            date: payment.date,
+            paymentType: payment.payment_type || "payment",
+          },
+        ],
+        totalAmount: project.total_amount, // Total project amount
+        paidAmount: totalPaid, // Total paid from all payments
+        pendingAmount: pending, // Remaining amount
+        notes: payment.notes,
+      });
+      setShowInvoice(true);
+    } catch (error) {
+      console.error("Error generating invoice:", error);
+      alert("Failed to generate invoice. Please try again.");
+    }
+  };
+
   const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
   const thisMonthPayments = payments.filter((p) => {
     const paymentDate = new Date(p.date);
@@ -140,7 +188,7 @@ export default function PaymentsPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Payments</h1>
@@ -247,26 +295,26 @@ export default function PaymentsPage() {
             </button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full">
+          <div className="overflow-x-auto -mx-6 sm:mx-0">
+            <table className="w-full min-w-[640px]">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Date</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Project</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Type</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Amount</th>
-                  <th className="text-left py-3 px-4 text-sm font-semibold text-gray-700">Notes</th>
-                  <th className="text-right py-3 px-4 text-sm font-semibold text-gray-700">Actions</th>
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700">Date</th>
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700">Project</th>
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 hidden sm:table-cell">Type</th>
+                  <th className="text-right py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700">Amount</th>
+                  <th className="text-left py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700 hidden md:table-cell">Notes</th>
+                  <th className="text-right py-3 px-2 sm:px-4 text-xs sm:text-sm font-semibold text-gray-700">Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {payments.map((payment) => (
                   <tr key={payment.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="py-3 px-4 text-sm text-gray-900">
+                    <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-900 whitespace-nowrap">
                       {format(new Date(payment.date), "MMM dd, yyyy")}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-900">{getProjectName(payment.project_id)}</td>
-                    <td className="py-3 px-4 text-sm">
+                    <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-900">{getProjectName(payment.project_id)}</td>
+                    <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm hidden sm:table-cell">
                       {payment.payment_type ? (
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium ${
@@ -287,17 +335,26 @@ export default function PaymentsPage() {
                         <span className="text-gray-400">-</span>
                       )}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-900 text-right font-semibold">
+                    <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold whitespace-nowrap">
                       ₹{payment.amount.toLocaleString()}
                     </td>
-                    <td className="py-3 px-4 text-sm text-gray-600">{payment.notes || "-"}</td>
-                    <td className="py-3 px-4 text-right">
-                      <button
-                        onClick={() => handleDelete(payment.id!)}
-                        className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </button>
+                    <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-600 hidden md:table-cell">{payment.notes || "-"}</td>
+                    <td className="py-3 px-2 sm:px-4 text-right">
+                      <div className="flex items-center justify-end gap-1">
+                        <button
+                          onClick={() => handleGenerateInvoice(payment)}
+                          className="p-1.5 sm:p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
+                          title="Generate Invoice"
+                        >
+                          <FileText className="w-4 h-4" />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(payment.id!)}
+                          className="p-1.5 sm:p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -309,8 +366,8 @@ export default function PaymentsPage() {
 
       {/* Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4 overflow-y-auto">
+          <div className="bg-white rounded-lg max-w-md w-full p-4 sm:p-6 my-auto max-h-[90vh] overflow-y-auto">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">Add Payment</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
@@ -405,6 +462,17 @@ export default function PaymentsPage() {
           </div>
         </div>
       )}
+
+      {/* Invoice Generator */}
+      <InvoiceGenerator
+        isOpen={showInvoice}
+        onClose={() => {
+          setShowInvoice(false);
+          setInvoiceData(null);
+        }}
+        invoiceData={invoiceData}
+        userProfile={userProfile}
+      />
     </div>
   );
 }

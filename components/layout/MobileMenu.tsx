@@ -25,9 +25,9 @@ export default function MobileMenu() {
       {/* Mobile Menu Button */}
       <button
         onClick={() => setIsOpen(true)}
-        className="md:hidden fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg"
+        className="md:hidden fixed top-3 left-3 z-50 p-2 bg-white rounded-lg shadow-lg border border-gray-200"
       >
-        <Menu className="w-6 h-6 text-gray-700" />
+        <Menu className="w-5 h-5 text-gray-700" />
       </button>
 
       {/* Mobile Sidebar Overlay */}

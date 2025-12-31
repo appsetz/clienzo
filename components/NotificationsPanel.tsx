@@ -162,7 +162,7 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
       />
       
       {/* Panel */}
-      <div className="fixed top-16 right-4 md:right-6 w-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl z-50 border border-gray-200 max-h-[calc(100vh-5rem)] flex flex-col">
+      <div className="fixed top-16 right-2 sm:right-4 md:right-6 w-[calc(100vw-1rem)] sm:w-96 max-w-[calc(100vw-2rem)] bg-white rounded-lg shadow-xl z-50 border border-gray-200 max-h-[calc(100vh-5rem)] flex flex-col">
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900">Notifications</h2>
           <button
