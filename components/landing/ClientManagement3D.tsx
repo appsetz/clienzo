@@ -2,12 +2,12 @@
 
 import { useRef } from "react";
 import { useFrame } from "@react-three/fiber";
-import { Mesh } from "three";
+import { Mesh, Group } from "three";
 
 export default function ClientManagement3D() {
   const dashboardRef = useRef<Mesh>(null);
   const phoneRef = useRef<Mesh>(null);
-  const clientIconRef = useRef<Mesh>(null);
+  const clientIconRef = useRef<Group>(null);
   const coinRef = useRef<Mesh>(null);
   const documentRef = useRef<Mesh>(null);
 
