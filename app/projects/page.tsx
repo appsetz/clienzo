@@ -79,7 +79,7 @@ export default function ProjectsPage() {
         const urlParams = new URLSearchParams(window.location.search);
         const editId = urlParams.get("edit");
         if (editId) {
-          const project = projectsData.find((p) => p.id === editId);
+          const project = projectsData.find((p: Project) => p.id === editId);
           if (project) {
             handleEdit(project);
           }
