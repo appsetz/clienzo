@@ -24,6 +24,7 @@ export default function ProjectsPage() {
     deadline: "",
     total_amount: "",
     reminder_date: "",
+    completed_date: "",
   });
   const [error, setError] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
@@ -206,6 +207,7 @@ export default function ProjectsPage() {
               deadline: "",
               total_amount: "",
               reminder_date: "",
+              completed_date: "",
             });
             setShowModal(true);
           }}
@@ -434,6 +436,7 @@ export default function ProjectsPage() {
                       deadline: "",
                       total_amount: "",
                       reminder_date: "",
+                      completed_date: "",
                     });
                     setError("");
                   }}
