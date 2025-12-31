@@ -9,18 +9,26 @@ import { format } from "date-fns";
 import InvoiceGenerator from "@/components/InvoiceGenerator";
 import { getClient } from "@/lib/firebase/db";
 
+type PaymentFormData = {
+  project_id: string;
+  amount: string;
+  date: string;
+  notes: string;
+  payment_type: "" | "advance" | "partial" | "final";
+};
+
 export default function PaymentsPage() {
   const { user, userProfile } = useAuth();
   const [payments, setPayments] = useState<Payment[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<PaymentFormData>({
     project_id: "",
     amount: "",
     date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
-    payment_type: "" as "advance" | "partial" | "final" | "",
+    payment_type: "",
   });
   const [error, setError] = useState("");
   const [showInvoice, setShowInvoice] = useState(false);
@@ -444,6 +452,7 @@ export default function PaymentsPage() {
                       amount: "",
                       date: format(new Date(), "yyyy-MM-dd"),
                       notes: "",
+                      payment_type: "",
                     });
                     setError("");
                   }}
