@@ -40,24 +40,51 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   useEffect(() => {
+    // Set a timeout to prevent infinite loading
+    const timeoutId = setTimeout(() => {
+      if (loading) {
+        console.warn("Auth loading timeout - setting loading to false");
+        setLoading(false);
+      }
+    }, 1500); // 1.5 second timeout - more aggressive
+
+    let isMounted = true;
+
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+      if (!isMounted) return;
+      
+      clearTimeout(timeoutId);
       setUser(currentUser);
+      
       if (currentUser) {
         try {
           const profile = await getUserProfile(currentUser.uid);
-          setUserProfile(profile);
+          if (isMounted) {
+            setUserProfile(profile);
+          }
         } catch (error) {
           console.error("Error loading user profile:", error);
           // Set profile to null if there's an error, but don't block the app
-          setUserProfile(null);
+          if (isMounted) {
+            setUserProfile(null);
+          }
         }
       } else {
-        setUserProfile(null);
+        if (isMounted) {
+          setUserProfile(null);
+        }
       }
-      setLoading(false);
+      
+      if (isMounted) {
+        setLoading(false);
+      }
     });
 
-    return () => unsubscribe();
+    return () => {
+      isMounted = false;
+      clearTimeout(timeoutId);
+      unsubscribe();
+    };
   }, []);
 
   return (

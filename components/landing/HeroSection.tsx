@@ -18,6 +18,8 @@ export const HeroSection = () => {
   const [lastScrollY, setLastScrollY] = React.useState(0);
 
   React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
     const handleScroll = () => {
       // Only apply scroll behavior on mobile (screen width < 768px)
       if (window.innerWidth >= 768) {

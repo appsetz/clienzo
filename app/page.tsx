@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
@@ -20,10 +20,40 @@ export default function Home() {
     }
   }, [user, loading, router]);
 
-  if (loading) {
+  // Add timeout to prevent infinite loading
+  const [forceRender, setForceRender] = useState(false);
+  
+  useEffect(() => {
+    const timeout = setTimeout(() => {
+      if (loading) {
+        console.warn("Page loading timeout - forcing render");
+        setForceRender(true);
+      }
+    }, 1500); // 1.5 second timeout
+
+    return () => clearTimeout(timeout);
+  }, [loading]);
+
+  // Render page even if loading takes too long
+  if (loading && !forceRender) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600 text-sm">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render landing page if user is logged in (will redirect)
+  if (user) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Redirecting to dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -32,6 +62,57 @@ export default function Home() {
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
       {/* Hero Section with Navigation */}
       <HeroSection />
+
+      {/* Layered Text Section - Goals */}
+      <section className="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-16 md:py-24">
+        <div className="container mx-auto px-4">
+          <div className="mx-auto py-24 font-sans font-black tracking-[-3px] md:tracking-[-4px] uppercase text-black antialiased" style={{ fontSize: "clamp(48px, 8vw, 120px)" }}>
+            <ul className="list-none p-0 m-0 flex flex-col items-center">
+              {[
+                { top: "\u00A0", bottom: "CLIENT" },
+                { top: "CLIENT", bottom: "MANAGEMENT" },
+                { top: "MANAGEMENT", bottom: "SIMPLIFIED" },
+                { top: "SIMPLIFIED", bottom: "PROJECTS" },
+                { top: "PROJECTS", bottom: "TRACKED" },
+                { top: "TRACKED", bottom: "PAYMENTS" },
+                { top: "PAYMENTS", bottom: "ORGANIZED" },
+                { top: "ORGANIZED", bottom: "GROWTH" },
+                { top: "GROWTH", bottom: "SUCCESS" },
+                { top: "SUCCESS", bottom: "\u00A0" },
+              ].map((line, index) => {
+                const centerIndex = 5;
+                const translateX = (index - centerIndex) * 50;
+                return (
+                  <li
+                    key={index}
+                    className="overflow-hidden relative h-[70px] md:h-[90px]"
+                    style={{
+                      transform: `translateX(${translateX}px) skew(${index % 2 === 0 ? "60deg, -30deg" : "0deg, -30deg"}) scaleY(${index % 2 === 0 ? "0.66667" : "1.33333"})`,
+                    }}
+                  >
+                    <p
+                      className="px-[20px] md:px-[30px] align-top whitespace-nowrap m-0 h-[70px] leading-[60px] md:h-[90px] md:leading-[80px]"
+                      style={{
+                        fontSize: "inherit",
+                      }}
+                    >
+                      {line.top}
+                    </p>
+                    <p
+                      className="px-[20px] md:px-[30px] align-top whitespace-nowrap m-0 h-[70px] leading-[60px] md:h-[90px] md:leading-[80px]"
+                      style={{
+                        fontSize: "inherit",
+                      }}
+                    >
+                      {line.bottom}
+                    </p>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        </div>
+      </section>
 
       {/* What is Clienova For Section */}
       <section id="about" className="container mx-auto px-4 sm:px-6 py-12 md:py-20 bg-white">
