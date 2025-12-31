@@ -493,7 +493,6 @@ export default function PaymentsPage() {
           agencyAddress: userProfile.agencyAddress,
           agencyWebsite: userProfile.agencyWebsite,
           agencyDescription: userProfile.agencyDescription,
-          gstin: userProfile.gstin,
         } : undefined}
       />
     </div>

@@ -455,7 +455,6 @@ export default function ProjectDetailPage() {
             agencyAddress: userProfile.agencyAddress,
             agencyWebsite: userProfile.agencyWebsite,
             agencyDescription: userProfile.agencyDescription,
-            gstin: userProfile.gstin,
           } : undefined}
         />
       )}
