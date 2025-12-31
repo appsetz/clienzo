@@ -480,7 +480,7 @@ export default function PaymentsPage() {
           setInvoiceData(null);
         }}
         invoiceData={invoiceData}
-        userProfile={userProfile}
+        userProfile={userProfile || undefined}
       />
     </div>
   );

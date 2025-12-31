@@ -392,7 +392,7 @@ export default function ProjectDetailPage() {
             setInvoiceData(null);
           }}
           invoiceData={invoiceData}
-          userProfile={userProfile}
+          userProfile={userProfile || undefined}
         />
       )}
     </div>
