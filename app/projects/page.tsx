@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProjects, createProject, updateProject, deleteProject, Project } from "@/lib/firebase/db";
 import { getClients, Client } from "@/lib/firebase/db";
@@ -28,25 +28,21 @@ export default function ProjectsPage() {
   const [error, setError] = useState("");
   const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
+  const handleEdit = useCallback((project: Project) => {
+    setEditingProject(project);
+    setFormData({
+      client_id: project.client_id,
+      name: project.name,
+      status: project.status,
+      deadline: project.deadline ? format(project.deadline, "yyyy-MM-dd") : "",
+      total_amount: project.total_amount.toString(),
+      reminder_date: project.reminder_date ? format(project.reminder_date, "yyyy-MM-dd") : "",
+      completed_date: project.completed_date ? format(project.completed_date, "yyyy-MM-dd") : "",
+    });
+    setShowModal(true);
+  }, []);
 
-  useEffect(() => {
-    if (typeof window !== "undefined" && user) {
-      // Check for client query param
-      const urlParams = new URLSearchParams(window.location.search);
-      const clientId = urlParams.get("client");
-      if (clientId) {
-        setFormData((prev) => ({ ...prev, client_id: clientId }));
-        setShowModal(true);
-      }
-    }
-  }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -97,7 +93,25 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, handleEdit]);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
+
+  useEffect(() => {
+    if (typeof window !== "undefined" && user) {
+      // Check for client query param
+      const urlParams = new URLSearchParams(window.location.search);
+      const clientId = urlParams.get("client");
+      if (clientId) {
+        setFormData((prev) => ({ ...prev, client_id: clientId }));
+        setShowModal(true);
+      }
+    }
+  }, [user]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -149,19 +163,6 @@ export default function ProjectsPage() {
     }
   };
 
-  const handleEdit = (project: Project) => {
-    setEditingProject(project);
-    setFormData({
-      client_id: project.client_id,
-      name: project.name,
-      status: project.status,
-      deadline: project.deadline ? format(project.deadline, "yyyy-MM-dd") : "",
-      total_amount: project.total_amount.toString(),
-      reminder_date: project.reminder_date ? format(project.reminder_date, "yyyy-MM-dd") : "",
-      completed_date: project.completed_date ? format(project.completed_date, "yyyy-MM-dd") : "",
-    });
-    setShowModal(true);
-  };
 
   const handleDelete = async (projectId: string) => {
     if (!confirm("Are you sure you want to delete this project?")) return;
@@ -219,7 +220,7 @@ export default function ProjectsPage() {
       {!canAddMore && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-orange-800">
-            You've reached your free active project limit.{" "}
+            You&apos;ve reached your free active project limit.{" "}
             <Link href="/upgrade" className="font-semibold underline">
               Upgrade to Pro
             </Link>{" "}

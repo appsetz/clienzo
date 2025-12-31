@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProjects, getPayments, Project, Payment } from "@/lib/firebase/db";
 import { Bell, X, AlertCircle, Clock, DollarSign, Calendar } from "lucide-react";
@@ -22,13 +22,7 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    if (user && isOpen) {
-      loadNotifications();
-    }
-  }, [user, isOpen]);
-
-  const loadNotifications = async () => {
+  const loadNotifications = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -136,7 +130,13 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, userProfile]);
+
+  useEffect(() => {
+    if (user && isOpen) {
+      loadNotifications();
+    }
+  }, [user, isOpen, loadNotifications]);
 
   if (!isOpen) return null;
 

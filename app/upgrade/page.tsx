@@ -20,7 +20,7 @@ export default function UpgradePage() {
     return (
       <div className="max-w-2xl mx-auto">
         <div className="bg-white rounded-lg shadow p-8 text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-4">You're already on {userProfile.plan} plan!</h1>
+          <h1 className="text-2xl font-bold text-gray-900 mb-4">You&apos;re already on {userProfile.plan} plan!</h1>
           <Link
             href="/dashboard"
             className="inline-block px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
@@ -83,7 +83,7 @@ export default function UpgradePage() {
         </div>
         <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">Upgrade Your Plan</h1>
         <p className="text-base sm:text-lg text-gray-600 mb-2">Unlock unlimited clients, projects, and powerful features</p>
-        <p className="text-sm text-orange-600 font-semibold">⚡ We're offering this low price for a limited time only!</p>
+        <p className="text-sm text-orange-600 font-semibold">⚡ We&apos;re offering this low price for a limited time only!</p>
       </div>
 
       {/* Success Message */}

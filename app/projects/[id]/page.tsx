@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import { getProject, updateProject, Project } from "@/lib/firebase/db";
@@ -26,13 +26,7 @@ export default function ProjectDetailPage() {
   });
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (user && params.id) {
-      loadData();
-    }
-  }, [user, params.id]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user || !params.id) return;
     try {
       const projectData = await getProject(params.id as string);
@@ -53,7 +47,13 @@ export default function ProjectDetailPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user, params.id, router]);
+
+  useEffect(() => {
+    if (user && params.id) {
+      loadData();
+    }
+  }, [user, params.id, loadData]);
 
   const handleAddPayment = async (e: React.FormEvent) => {
     e.preventDefault();
