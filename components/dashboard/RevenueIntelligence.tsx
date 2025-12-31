@@ -110,7 +110,7 @@ export default function RevenueIntelligence({
     return Array.from(clientMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
-  }, [payments, projects, clients]);
+  }, [payments, projects, clients, userPlan]);
 
   const maxRevenue = useMemo(() => {
     if (analyticsPeriod === "week") return Math.max(lastWeekRevenue, 1);

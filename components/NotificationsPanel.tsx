@@ -130,7 +130,7 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
     } finally {
       setLoading(false);
     }
-  }, [user, userProfile]);
+  }, [user]);
 
   useEffect(() => {
     if (user && isOpen) {

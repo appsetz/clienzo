@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Star } from "lucide-react";
+import Image from "next/image";
 import { getReviews, Review } from "@/lib/firebase/db";
 
 // --- Types ---
@@ -78,7 +79,7 @@ const TestimonialsColumn = (props: {
                     </p>
                     <footer className="flex items-center gap-3 mt-6">
                       {image ? (
-                        <img
+                        <Image
                           width={40}
                           height={40}
                           src={image}

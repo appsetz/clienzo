@@ -323,7 +323,7 @@ export const deletePayment = async (paymentId: string): Promise<void> => {
 // Reviews
 export const createReview = async (review: Omit<Review, "id" | "createdAt">): Promise<string> => {
   try {
-    const reviewData = {
+    const reviewData: any = {
       user_id: review.user_id,
       user_name: review.user_name,
       rating: review.rating,

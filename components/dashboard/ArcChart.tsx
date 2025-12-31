@@ -78,7 +78,7 @@ export default function ArcChart({
             outerRadius={outerRadius}
             paddingAngle={2}
             dataKey="value"
-            label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+            label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
             labelLine={false}
           >
             {filteredData.map((entry, index) => (
@@ -86,9 +86,9 @@ export default function ArcChart({
             ))}
           </Pie>
           <Tooltip
-            formatter={(value: number, name: string, props: any) => [
-              `₹${value.toLocaleString()}`,
-              props.payload.name,
+            formatter={(value: number | undefined, name: string | undefined, props: any) => [
+              value ? `₹${value.toLocaleString()}` : '₹0',
+              props.payload?.name || name || '',
             ]}
             contentStyle={{
               backgroundColor: "white",
