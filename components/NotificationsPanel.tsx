@@ -65,8 +65,8 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
           }
         }
 
-        // Check for reminders (Pro feature)
-        if (userProfile?.plan === "pro" && project.reminder_date) {
+        // Check for reminders
+        if (project.reminder_date) {
           const reminderDate = new Date(project.reminder_date);
           reminderDate.setHours(0, 0, 0, 0);
           const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -85,8 +85,8 @@ export default function NotificationsPanel({ isOpen, onClose }: { isOpen: boolea
         }
       });
 
-      // Check for pending payments (Pro feature)
-      if (userProfile?.plan === "pro") {
+      // Check for pending payments
+      {
         projects.forEach((project) => {
           const projectPayments = payments.filter((p) => p.project_id === project.id);
           const paid = projectPayments.reduce((sum, p) => sum + p.amount, 0);

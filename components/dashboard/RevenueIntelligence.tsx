@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { Payment, Project, Client } from "@/lib/firebase/db";
 import { TrendingUp, DollarSign, Users, BarChart3, AlertCircle, Calendar } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachMonthOfInterval, subMonths, startOfWeek, endOfWeek, subWeeks, startOfYear, endOfYear, eachYearOfInterval, subYears, parseISO } from "date-fns";
-import UpgradeModal from "@/components/UpgradeModal";
 
 interface RevenueIntelligenceProps {
   payments: Payment[];
@@ -19,13 +18,10 @@ export default function RevenueIntelligence({
   clients,
   userPlan,
 }: RevenueIntelligenceProps) {
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
   const [analyticsPeriod, setAnalyticsPeriod] = useState<"week" | "month" | "year">("month");
 
   // Calculate last week revenue (7 days)
   const lastWeekRevenue = useMemo(() => {
-    if (userPlan === "free") return 0;
-    
     const weekStart = startOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
     const weekEnd = endOfWeek(subWeeks(new Date(), 1), { weekStartsOn: 1 });
     
@@ -35,12 +31,10 @@ export default function RevenueIntelligence({
     });
     
     return weekPayments.reduce((sum, p) => sum + p.amount, 0);
-  }, [payments, userPlan]);
+  }, [payments]);
 
   // Calculate monthly revenue for last 6 months
   const monthlyRevenue = useMemo(() => {
-    if (userPlan === "free") return [];
-    
     const months = eachMonthOfInterval({
       start: subMonths(new Date(), 5),
       end: new Date(),
@@ -59,12 +53,10 @@ export default function RevenueIntelligence({
         revenue,
       };
     });
-  }, [payments, userPlan]);
+  }, [payments]);
 
   // Calculate yearly revenue for last 3 years
   const yearlyRevenue = useMemo(() => {
-    if (userPlan === "free") return [];
-    
     const years = eachYearOfInterval({
       start: subYears(new Date(), 2),
       end: new Date(),
@@ -83,7 +75,7 @@ export default function RevenueIntelligence({
         revenue,
       };
     });
-  }, [payments, userPlan]);
+  }, [payments]);
 
   // Calculate pending vs received
   const paymentStats = useMemo(() => {
@@ -118,7 +110,7 @@ export default function RevenueIntelligence({
     return Array.from(clientMap.values())
       .sort((a, b) => b.revenue - a.revenue)
       .slice(0, 5);
-  }, [payments, projects, clients, userPlan]);
+  }, [payments, projects, clients]);
 
   const maxRevenue = useMemo(() => {
     if (analyticsPeriod === "week") return Math.max(lastWeekRevenue, 1);
@@ -131,46 +123,6 @@ export default function RevenueIntelligence({
       ? Math.max(...yearlyRevenue.map((y) => y.revenue))
       : 1;
   }, [analyticsPeriod, lastWeekRevenue, monthlyRevenue, yearlyRevenue]);
-
-  if (userPlan === "free") {
-    return (
-      <>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-purple-600" />
-              <h2 className="text-xl font-semibold text-gray-900">Revenue Intelligence</h2>
-            </div>
-            <span className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
-              Pro Feature
-            </span>
-          </div>
-          <div className="text-center py-8">
-            <TrendingUp className="w-16 h-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
-              Unlock Revenue Insights with Pro
-            </h3>
-            <p className="text-gray-600 mb-6 max-w-md mx-auto">
-              Get monthly revenue graphs, pending vs received payments analysis, and client-wise revenue ranking.
-            </p>
-            <button
-              onClick={() => setShowUpgradeModal(true)}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
-            >
-              Upgrade to Pro
-            </button>
-          </div>
-        </div>
-        <UpgradeModal
-          isOpen={showUpgradeModal}
-          onClose={() => setShowUpgradeModal(false)}
-          title="Unlock Revenue Intelligence"
-          message="Upgrade to Pro to get monthly revenue graphs, payment analytics, and client revenue rankings."
-          limitType="general"
-        />
-      </>
-    );
-  }
 
   return (
     <div className="space-y-6">

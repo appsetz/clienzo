@@ -22,7 +22,7 @@ export interface UserProfile {
   plan: "free" | "pro" | "agency";
   createdAt: Date;
   profileComplete?: boolean;
-  userType?: "freelancer" | "agency";
+  userType?: "freelancer" | "agency" | "business";
   // Freelancer fields
   phone?: string;
   location?: string;
@@ -35,6 +35,12 @@ export interface UserProfile {
   agencyWebsite?: string;
   agencyDescription?: string;
   numberOfEmployees?: string;
+  // Business fields
+  businessName?: string;
+  businessPhone?: string;
+  businessEmail?: string;
+  businessAddress?: string;
+  businessType?: string; // e.g., "Service", "Retail", "Restaurant"
 }
 
 export const signUp = async (

@@ -8,7 +8,6 @@ import { doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase/config";
 import { UserProfile } from "@/lib/firebase/auth";
 import { Building2, User } from "lucide-react";
-import UpgradeModal from "@/components/UpgradeModal";
 import { getClients, getProjects } from "@/lib/firebase/db";
 import { checkClientLimit, checkProjectLimit } from "@/lib/plan-limits";
 
@@ -19,7 +18,6 @@ export default function ProfileSetupPage() {
   const [userType, setUserType] = useState<"freelancer" | "agency" | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Freelancer fields
   const [freelancerData, setFreelancerData] = useState({
@@ -38,6 +36,7 @@ export default function ProfileSetupPage() {
     agencyDescription: "",
     numberOfEmployees: "",
   });
+
 
   useEffect(() => {
     if (userProfile?.profileComplete) {
@@ -58,28 +57,21 @@ export default function ProfileSetupPage() {
     setLoading(true);
 
     try {
-      const profileUpdate: Partial<UserProfile> = {
+      const profileUpdate: any = {
         profileComplete: true,
         userType: "freelancer",
-        phone: freelancerData.phone || undefined,
-        location: freelancerData.location || undefined,
-        bio: freelancerData.bio || undefined,
       };
+
+      // Only include optional fields if they have values
+      if (freelancerData.phone) profileUpdate.phone = freelancerData.phone;
+      if (freelancerData.location) profileUpdate.location = freelancerData.location;
+      if (freelancerData.bio) profileUpdate.bio = freelancerData.bio;
 
       await updateDoc(doc(db, "users", user.uid), profileUpdate);
       await refreshProfile();
       
-      // Check if user is at limits and show upgrade prompt
-      const [atClientLimit, atProjectLimit] = await Promise.all([
-        checkClientLimit(user.uid, "free").then(canAdd => !canAdd),
-        checkProjectLimit(user.uid, "free").then(canAdd => !canAdd),
-      ]);
-      
-      if (atClientLimit || atProjectLimit) {
-        setShowUpgradeModal(true);
-      } else {
-        router.push("/dashboard");
-      }
+      // All features are now available to everyone
+      router.push("/dashboard/freelancer");
     } catch (err: any) {
       setError(err.message || "Failed to save profile");
     } finally {
@@ -95,32 +87,25 @@ export default function ProfileSetupPage() {
     setLoading(true);
 
     try {
-      const profileUpdate: Partial<UserProfile> = {
+      const profileUpdate: any = {
         profileComplete: true,
         userType: "agency",
         agencyName: agencyData.agencyName,
-        agencyPhone: agencyData.agencyPhone || undefined,
-        agencyEmail: agencyData.agencyEmail || undefined,
-        agencyAddress: agencyData.agencyAddress || undefined,
-        agencyWebsite: agencyData.agencyWebsite || undefined,
-        agencyDescription: agencyData.agencyDescription || undefined,
-        numberOfEmployees: agencyData.numberOfEmployees || undefined,
       };
+
+      // Only include optional fields if they have values
+      if (agencyData.agencyPhone) profileUpdate.agencyPhone = agencyData.agencyPhone;
+      if (agencyData.agencyEmail) profileUpdate.agencyEmail = agencyData.agencyEmail;
+      if (agencyData.agencyAddress) profileUpdate.agencyAddress = agencyData.agencyAddress;
+      if (agencyData.agencyWebsite) profileUpdate.agencyWebsite = agencyData.agencyWebsite;
+      if (agencyData.agencyDescription) profileUpdate.agencyDescription = agencyData.agencyDescription;
+      if (agencyData.numberOfEmployees) profileUpdate.numberOfEmployees = agencyData.numberOfEmployees;
 
       await updateDoc(doc(db, "users", user.uid), profileUpdate);
       await refreshProfile();
       
-      // Check if user is at limits and show upgrade prompt
-      const [atClientLimit, atProjectLimit] = await Promise.all([
-        checkClientLimit(user.uid, "free").then(canAdd => !canAdd),
-        checkProjectLimit(user.uid, "free").then(canAdd => !canAdd),
-      ]);
-      
-      if (atClientLimit || atProjectLimit) {
-        setShowUpgradeModal(true);
-      } else {
-        router.push("/dashboard");
-      }
+      // All features are now available to everyone
+      router.push(`/dashboard/${userType}`);
     } catch (err: any) {
       setError(err.message || "Failed to save profile");
     } finally {
@@ -128,19 +113,20 @@ export default function ProfileSetupPage() {
     }
   };
 
+
   if (step === "type") {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 px-4">
         <div className="max-w-2xl w-full bg-white rounded-2xl shadow-xl p-8">
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
-              <Image
-                src="/images/clienzo-logo.png"
-                alt="Clienzo"
-                width={150}
-                height={50}
-                className="object-contain"
-              />
+                <Image
+                  src="/images/bg-removed-logo.png"
+                  alt="Clienova"
+                  width={400}
+                  height={133}
+                  className="h-24 md:h-28 w-auto object-contain"
+                />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
             <p className="text-gray-600">Tell us about yourself to get started</p>
@@ -158,6 +144,11 @@ export default function ProfileSetupPage() {
               <p className="text-gray-600">
                 Working independently and managing your own clients and projects
               </p>
+              <div className="mt-3 text-xs text-gray-500">
+                <p>• Manage clients and projects</p>
+                <p>• Track payments and revenue</p>
+                <p>• Set reminders and deadlines</p>
+              </div>
             </button>
 
             <button
@@ -171,7 +162,13 @@ export default function ProfileSetupPage() {
               <p className="text-gray-600">
                 Running an agency with a team managing multiple clients
               </p>
+              <div className="mt-3 text-xs text-gray-500">
+                <p>• Manage team members</p>
+                <p>• Assign projects to team</p>
+                <p>• Track team payments</p>
+              </div>
             </button>
+
           </div>
         </div>
       </div>
@@ -189,9 +186,15 @@ export default function ProfileSetupPage() {
             ← Back
           </button>
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            {userType === "freelancer" ? "Freelancer Details" : "Agency Details"}
+            {userType === "freelancer" 
+              ? "Freelancer Details" 
+              : "Agency Details"}
           </h1>
-          <p className="text-gray-600">Complete your profile to get started</p>
+          <p className="text-gray-600">
+            {userType === "freelancer" 
+              ? "Complete your profile to start managing clients and projects"
+              : "Complete your profile to start managing your agency and team"}
+          </p>
         </div>
 
         {error && (
@@ -382,17 +385,6 @@ export default function ProfileSetupPage() {
         )}
       </div>
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => {
-          setShowUpgradeModal(false);
-          router.push("/dashboard");
-        }}
-        title="You&apos;re at Your Free Plan Limits!"
-        message="You&apos;ve reached your free plan limits. Upgrade to Pro to unlock unlimited clients, projects, and powerful features."
-        limitType="general"
-      />
     </div>
   );
 }

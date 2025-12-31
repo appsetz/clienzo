@@ -10,50 +10,23 @@ export interface PlanLimits {
 }
 
 export const getPlanLimits = (plan: UserProfile["plan"]): PlanLimits => {
-  switch (plan) {
-    case "free":
-      return {
-        maxClients: 3,
-        maxProjects: 3,
-        hasReminders: false,
-        hasAnalytics: false,
-        hasExports: false,
-      };
-    case "pro":
-      return {
-        maxClients: Infinity,
-        maxProjects: Infinity,
-        hasReminders: true,
-        hasAnalytics: true,
-        hasExports: true,
-      };
-    case "agency":
-      return {
-        maxClients: Infinity,
-        maxProjects: Infinity,
-        hasReminders: true,
-        hasAnalytics: true,
-        hasExports: true,
-      };
-    default:
-      return getPlanLimits("free");
-  }
+  // All features are now available to everyone
+  return {
+    maxClients: Infinity,
+    maxProjects: Infinity,
+    hasReminders: true,
+    hasAnalytics: true,
+    hasExports: true,
+  };
 };
 
 export const checkClientLimit = async (userId: string, plan: UserProfile["plan"]): Promise<boolean> => {
-  const limits = getPlanLimits(plan);
-  if (limits.maxClients === Infinity) return true;
-  
-  const clients = await getClients(userId);
-  return clients.length < limits.maxClients;
+  // No limits - everyone has unlimited access
+  return true;
 };
 
 export const checkProjectLimit = async (userId: string, plan: UserProfile["plan"]): Promise<boolean> => {
-  const limits = getPlanLimits(plan);
-  if (limits.maxProjects === Infinity) return true;
-  
-  const projects = await getProjects(userId);
-  const activeProjects = projects.filter((p) => p.status === "active");
-  return activeProjects.length < limits.maxProjects;
+  // No limits - everyone has unlimited access
+  return true;
 };
 

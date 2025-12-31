@@ -6,7 +6,6 @@ import { getClients, createClient, updateClient, deleteClient, Client } from "@/
 import { Plus, Edit2, Trash2, Mail, Phone, User } from "lucide-react";
 import { checkClientLimit, getPlanLimits } from "@/lib/plan-limits";
 import Link from "next/link";
-import UpgradeModal from "@/components/UpgradeModal";
 
 export default function ClientsPage() {
   const { user, userProfile } = useAuth();
@@ -16,7 +15,6 @@ export default function ClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const [formData, setFormData] = useState({ name: "", email: "", phone: "", notes: "" });
   const [error, setError] = useState("");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const loadClients = useCallback(async () => {
     if (!user) return;
@@ -42,15 +40,7 @@ export default function ClientsPage() {
 
     setError("");
 
-    // Check limits for new clients
-    if (!editingClient) {
-      const canAdd = await checkClientLimit(user.uid, userProfile?.plan || "free");
-      if (!canAdd) {
-        setShowModal(false);
-        setShowUpgradeModal(true);
-        return;
-      }
-    }
+    // All features are now available to everyone - no limits
 
     try {
       if (editingClient) {
@@ -129,11 +119,7 @@ export default function ClientsPage() {
       {!canAddMore && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-orange-800">
-            You&apos;ve reached your free client limit.{" "}
-            <Link href="/upgrade" className="font-semibold underline">
-              Upgrade to Pro
-            </Link>{" "}
-            for unlimited clients.
+            All features are now available to everyone.
           </p>
         </div>
       )}
@@ -276,14 +262,6 @@ export default function ClientsPage() {
         </div>
       )}
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        title="You've Reached Your Free Limit!"
-        message="You've reached your free client limit. Upgrade to Pro for unlimited clients and unlock powerful features."
-        limitType="clients"
-      />
     </div>
   );
 }

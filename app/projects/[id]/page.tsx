@@ -6,7 +6,8 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getProject, updateProject, Project } from "@/lib/firebase/db";
 import { getClient, Client } from "@/lib/firebase/db";
 import { getPayments, Payment, createPayment, deletePayment } from "@/lib/firebase/db";
-import { ArrowLeft, Edit2, DollarSign, Calendar, Plus, Trash2, FileText } from "lucide-react";
+import { getTeamMembers, TeamMember } from "@/lib/firebase/db";
+import { ArrowLeft, Edit2, DollarSign, Calendar, Plus, Trash2, FileText, Users } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
 import InvoiceGenerator from "@/components/InvoiceGenerator";
@@ -18,6 +19,8 @@ export default function ProjectDetailPage() {
   const [project, setProject] = useState<Project | null>(null);
   const [client, setClient] = useState<Client | null>(null);
   const [payments, setPayments] = useState<Payment[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [projectTeamMembers, setProjectTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [paymentForm, setPaymentForm] = useState({
@@ -39,18 +42,39 @@ export default function ProjectDetailPage() {
       }
       setProject(projectData);
 
-      const [clientData, paymentsData] = await Promise.all([
+      const promises: Promise<any>[] = [
         getClient(projectData.client_id),
         getPayments(user.uid, projectData.id),
-      ]);
+      ];
+      
+      // Load team members if user is an agency
+      if (userProfile?.userType === "agency") {
+        promises.push(getTeamMembers(user.uid));
+      }
+      
+      const results = await Promise.all(promises);
+      const [clientData, paymentsData] = results;
+      
       setClient(clientData);
       setPayments(paymentsData);
+      
+      // If agency and project has team members, filter them
+      if (userProfile?.userType === "agency" && projectData.team_members && projectData.team_members.length > 0) {
+        const allTeamMembers = results[2] || [];
+        const assignedMembers = allTeamMembers.filter((member: TeamMember) => 
+          projectData.team_members?.includes(member.id!)
+        );
+        setProjectTeamMembers(assignedMembers);
+        setTeamMembers(allTeamMembers);
+      } else if (userProfile?.userType === "agency") {
+        setTeamMembers(results[2] || []);
+      }
     } catch (error) {
       console.error("Error loading project:", error);
     } finally {
       setLoading(false);
     }
-  }, [user, params.id, router]);
+  }, [user, userProfile, params.id, router]);
 
   useEffect(() => {
     if (user && params.id) {
@@ -165,6 +189,32 @@ export default function ProjectDetailPage() {
             </div>
           )}
         </div>
+
+        {/* Team Members Managing This Project (Agencies only) */}
+        {userProfile?.userType === "agency" && projectTeamMembers.length > 0 && (
+          <div className="mb-6 pb-6 border-b border-gray-200">
+            <div className="flex items-center gap-2 mb-3">
+              <Users className="w-5 h-5 text-purple-600" />
+              <p className="text-sm font-medium text-gray-700">Team Members Managing This Project</p>
+            </div>
+            <div className="flex flex-wrap gap-3">
+              {projectTeamMembers.map((member) => (
+                <div
+                  key={member.id}
+                  className="flex items-center gap-2 px-3 py-2 bg-purple-50 border border-purple-200 rounded-lg"
+                >
+                  <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                    {member.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                    <p className="text-xs text-gray-500">{member.role}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Payment Progress */}
         <div>

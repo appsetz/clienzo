@@ -8,14 +8,12 @@ import { UserProfile } from "@/lib/firebase/auth";
 import { User, Mail, Phone, MapPin, FileText, Building2, Globe, Calendar, Users, Edit2, Save, X } from "lucide-react";
 import { format } from "date-fns";
 import Link from "next/link";
-import UpgradeModal from "@/components/UpgradeModal";
 
 export default function ProfilePage() {
   const { user, userProfile, refreshProfile } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -61,23 +59,23 @@ export default function ProfilePage() {
     setLoading(true);
 
     try {
-      const updateData: Partial<UserProfile> = {
+      const updateData: any = {
         name: formData.name,
         email: formData.email,
       };
 
       if (userProfile.userType === "freelancer") {
-        updateData.phone = formData.phone || undefined;
-        updateData.location = formData.location || undefined;
-        updateData.bio = formData.bio || undefined;
+        if (formData.phone) updateData.phone = formData.phone;
+        if (formData.location) updateData.location = formData.location;
+        if (formData.bio) updateData.bio = formData.bio;
       } else if (userProfile.userType === "agency") {
-        updateData.agencyName = formData.agencyName || undefined;
-        updateData.agencyPhone = formData.agencyPhone || undefined;
-        updateData.agencyEmail = formData.agencyEmail || undefined;
-        updateData.agencyAddress = formData.agencyAddress || undefined;
-        updateData.agencyWebsite = formData.agencyWebsite || undefined;
-        updateData.agencyDescription = formData.agencyDescription || undefined;
-        updateData.numberOfEmployees = formData.numberOfEmployees || undefined;
+        if (formData.agencyName) updateData.agencyName = formData.agencyName;
+        if (formData.agencyPhone) updateData.agencyPhone = formData.agencyPhone;
+        if (formData.agencyEmail) updateData.agencyEmail = formData.agencyEmail;
+        if (formData.agencyAddress) updateData.agencyAddress = formData.agencyAddress;
+        if (formData.agencyWebsite) updateData.agencyWebsite = formData.agencyWebsite;
+        if (formData.agencyDescription) updateData.agencyDescription = formData.agencyDescription;
+        if (formData.numberOfEmployees) updateData.numberOfEmployees = formData.numberOfEmployees;
       }
 
       await updateDoc(doc(db, "users", user.uid), updateData);
@@ -149,14 +147,6 @@ export default function ProfilePage() {
             <h2 className="text-lg font-semibold text-gray-900 mb-1">Current Plan</h2>
             <p className="text-gray-600 capitalize">{userProfile.plan} Plan</p>
           </div>
-          {userProfile.plan === "free" && (
-            <Link
-              href="/upgrade"
-              className="px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
-            >
-              Upgrade to Pro
-            </Link>
-          )}
         </div>
       </div>
 
@@ -449,14 +439,6 @@ export default function ProfilePage() {
         </form>
       </div>
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        title="Upgrade to Pro"
-        message="Upgrade to Pro to unlock unlimited clients, projects, and powerful features."
-        limitType="general"
-      />
     </div>
   );
 }

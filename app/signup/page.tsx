@@ -65,11 +65,11 @@ export default function SignUpPage() {
         <div className="text-center mb-8">
           <div className="flex items-center justify-center gap-2 mb-4">
             <Image
-              src="/images/clienzo-logo.png"
-              alt="Clienzo"
-              width={150}
-              height={50}
-              className="object-contain"
+              src="/images/bg-removed-logo.png"
+              alt="Clienova"
+              width={400}
+              height={133}
+              className="h-24 md:h-28 w-auto object-contain"
             />
           </div>
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Create your account</h1>

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, CreditCard, Bell, User } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, CreditCard, Bell, User, UserPlus } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -11,6 +11,7 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/payments", label: "Payments", icon: CreditCard },
+  { href: "/team", label: "Team", icon: UserPlus, agencyOnly: true },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -23,23 +24,34 @@ export default function Sidebar() {
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center gap-2">
           <Image
-            src="/images/clienzo-logo.png"
-            alt="Clienzo"
-            width={120}
-            height={40}
-            className="object-contain"
+            src="/images/bg-removed-logo.png"
+            alt="Clienova"
+            width={250}
+            height={83}
+            className="h-20 w-auto object-contain"
           />
         </div>
       </div>
 
       <nav className="flex-1 p-4 space-y-2">
         {navItems.map((item) => {
+          // Skip Team item if user is not an agency
+          if (item.agencyOnly && userProfile?.userType !== "agency") {
+            return null;
+          }
+          
           const Icon = item.icon;
-          const isActive = pathname === item.href;
+          // Check if dashboard link should redirect to type-specific dashboard
+          const href = item.href === "/dashboard" && userProfile?.userType 
+            ? `/dashboard/${userProfile.userType}` 
+            : item.href;
+          const isActive = pathname === item.href || pathname?.startsWith(href);
+          
           return (
             <Link
               key={item.href}
-              href={item.href}
+              href={href}
+              data-tour={item.href === "/dashboard" ? "nav-dashboard" : item.href === "/clients" ? "nav-clients" : item.href === "/projects" ? "nav-projects" : item.href === "/payments" ? "nav-payments" : item.href === "/team" ? "nav-team" : item.href === "/profile" ? "nav-profile" : undefined}
               className={`flex items-center gap-3 px-4 py-3 rounded-lg transition ${
                 isActive
                   ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
@@ -54,19 +66,7 @@ export default function Sidebar() {
       </nav>
 
       <div className="p-4 border-t border-gray-200">
-        {userProfile?.plan === "free" && (
-          <Link
-            href="/upgrade"
-            className="block w-full px-4 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-center font-semibold hover:shadow-lg transition"
-          >
-            Upgrade to Pro
-          </Link>
-        )}
-        <div className="mt-4 text-center">
-          <p className="text-xs text-gray-500">
-            Plan: <span className="font-semibold capitalize">{userProfile?.plan || "Free"}</span>
-          </p>
-        </div>
+        {/* All features are now available to everyone */}
       </div>
     </aside>
   );

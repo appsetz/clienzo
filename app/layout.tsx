@@ -7,8 +7,8 @@ import SEOStructuredData from "@/components/SEOStructuredData";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Clienzo - Best Client Manager Software for Freelancers & Agencies",
-  description: "Clienzo is the ultimate client management tool for freelancers and agencies. Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features.",
+  title: "Clienova - Best Client Manager Software for Freelancers & Agencies",
+  description: "Clienova is the ultimate client management tool for freelancers and agencies. Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features.",
   keywords: [
     "client manager",
     "client management software",
@@ -21,14 +21,14 @@ export const metadata: Metadata = {
     "client database",
     "CRM for freelancers",
     "client management system",
-    "clienzo",
+    "clienova",
     "client manager app",
     "freelance client manager",
     "small business client manager"
   ],
-  authors: [{ name: "Clienzo" }],
+  authors: [{ name: "Clienova" }],
   creator: "Appsetz",
-  publisher: "Clienzo",
+  publisher: "Clienova",
   robots: {
     index: true,
     follow: true,
@@ -44,21 +44,21 @@ export const metadata: Metadata = {
     type: "website",
     locale: "en_US",
     url: "https://clienzo.com",
-    siteName: "Clienzo",
-    title: "Clienzo - Best Client Manager Software for Freelancers & Agencies",
+    siteName: "Clienova",
+    title: "Clienova - Best Client Manager Software for Freelancers & Agencies",
     description: "Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features for freelancers and agencies.",
     images: [
       {
         url: "/images/logo-symbol.png",
         width: 1200,
         height: 630,
-        alt: "Clienzo - Client Management Software",
+        alt: "Clienova - Client Management Software",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "Clienzo - Best Client Manager Software",
+    title: "Clienova - Best Client Manager Software",
     description: "Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features.",
     images: ["/images/logo-symbol.png"],
   },

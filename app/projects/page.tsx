@@ -2,18 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
-import { getProjects, createProject, updateProject, deleteProject, Project } from "@/lib/firebase/db";
+import { getProjects, createProject, updateProject, deleteProject, Project, getTeamMembers, TeamMember } from "@/lib/firebase/db";
 import { getClients, Client } from "@/lib/firebase/db";
-import { Plus, Edit2, Trash2, Calendar, DollarSign, FolderKanban } from "lucide-react";
+import { Plus, Edit2, Trash2, Calendar, DollarSign, FolderKanban, Users } from "lucide-react";
 import { checkProjectLimit, getPlanLimits } from "@/lib/plan-limits";
 import { format } from "date-fns";
 import Link from "next/link";
-import UpgradeModal from "@/components/UpgradeModal";
 
 export default function ProjectsPage() {
   const { user, userProfile } = useAuth();
   const [projects, setProjects] = useState<Project[]>([]);
   const [clients, setClients] = useState<Client[]>([]);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
   const [loading, setLoading] = useState(true);
   const [showModal, setShowModal] = useState(false);
   const [editingProject, setEditingProject] = useState<Project | null>(null);
@@ -25,9 +25,9 @@ export default function ProjectsPage() {
     total_amount: "",
     reminder_date: "",
     completed_date: "",
+    team_members: [] as string[],
   });
   const [error, setError] = useState("");
-  const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
   const handleEdit = useCallback((project: Project) => {
     setEditingProject(project);
@@ -39,6 +39,7 @@ export default function ProjectsPage() {
       total_amount: project.total_amount.toString(),
       reminder_date: project.reminder_date ? format(project.reminder_date, "yyyy-MM-dd") : "",
       completed_date: project.completed_date ? format(project.completed_date, "yyyy-MM-dd") : "",
+      team_members: project.team_members || [],
     });
     setShowModal(true);
   }, []);
@@ -47,14 +48,27 @@ export default function ProjectsPage() {
     if (!user) return;
     setLoading(true);
     try {
-      const [projectsData, clientsData] = await Promise.all([
+      const promises: Promise<any>[] = [
         getProjects(user.uid),
         getClients(user.uid),
-      ]);
+      ];
+      
+      // Load team members if user is an agency
+      if (userProfile?.userType === "agency") {
+        promises.push(getTeamMembers(user.uid));
+      }
+      
+      const results = await Promise.all(promises);
+      const [projectsData, clientsData] = results;
+      
+      if (userProfile?.userType === "agency") {
+        setTeamMembers(results[2] || []);
+      }
       
       console.log("Projects page data loaded:", {
         projects: projectsData.length,
         clients: clientsData.length,
+        teamMembers: userProfile?.userType === "agency" ? results[2]?.length : 0,
       });
       
       setProjects(projectsData);
@@ -94,7 +108,7 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false);
     }
-  }, [user, handleEdit]);
+  }, [user, userProfile, handleEdit]);
 
   useEffect(() => {
     if (user) {
@@ -120,15 +134,7 @@ export default function ProjectsPage() {
 
     setError("");
 
-    // Check limits for new active projects
-    if (!editingProject && formData.status === "active") {
-      const canAdd = await checkProjectLimit(user.uid, userProfile?.plan || "free");
-      if (!canAdd) {
-        setShowModal(false);
-        setShowUpgradeModal(true);
-        return;
-      }
-    }
+    // All features are now available to everyone - no limits
 
     try {
       const projectData = {
@@ -138,8 +144,9 @@ export default function ProjectsPage() {
         status: formData.status,
         total_amount: parseFloat(formData.total_amount) || 0,
         deadline: formData.deadline ? new Date(formData.deadline) : undefined,
-        reminder_date: formData.reminder_date && userProfile?.plan === "pro" ? new Date(formData.reminder_date) : undefined,
+        reminder_date: formData.reminder_date ? new Date(formData.reminder_date) : undefined,
         completed_date: formData.status === "completed" && formData.completed_date ? new Date(formData.completed_date) : undefined,
+        team_members: userProfile?.userType === "agency" && (formData.team_members || []).length > 0 ? formData.team_members : undefined,
       };
 
       if (editingProject) {
@@ -157,6 +164,7 @@ export default function ProjectsPage() {
         total_amount: "",
         reminder_date: "",
         completed_date: "",
+        team_members: [],
       });
       loadData();
     } catch (error: any) {
@@ -208,6 +216,7 @@ export default function ProjectsPage() {
               total_amount: "",
               reminder_date: "",
               completed_date: "",
+              team_members: [],
             });
             setShowModal(true);
           }}
@@ -222,11 +231,7 @@ export default function ProjectsPage() {
       {!canAddMore && (
         <div className="bg-orange-50 border border-orange-200 rounded-lg p-4">
           <p className="text-orange-800">
-            You&apos;ve reached your free active project limit.{" "}
-            <Link href="/upgrade" className="font-semibold underline">
-              Upgrade to Pro
-            </Link>{" "}
-            for unlimited projects.
+            All features are now available to everyone.
           </p>
         </div>
       )}
@@ -279,6 +284,32 @@ export default function ProjectsPage() {
                         </div>
                       )}
                     </div>
+                    {/* Show team members if agency and project has team members */}
+                    {userProfile?.userType === "agency" && project.team_members && project.team_members.length > 0 && (
+                      <div className="mt-2 flex items-center gap-2">
+                        <Users className="w-4 h-4 text-purple-600" />
+                        <div className="flex items-center gap-1 flex-wrap">
+                          {project.team_members.slice(0, 3).map((memberId) => {
+                            const member = teamMembers.find((m) => m.id === memberId);
+                            if (!member) return null;
+                            return (
+                              <div
+                                key={memberId}
+                                className="flex items-center gap-1 px-2 py-1 bg-purple-50 border border-purple-200 rounded text-xs"
+                              >
+                                <div className="h-5 w-5 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-xs">
+                                  {member.name.charAt(0).toUpperCase()}
+                                </div>
+                                <span className="text-gray-700 font-medium">{member.name}</span>
+                              </div>
+                            );
+                          })}
+                          {project.team_members.length > 3 && (
+                            <span className="text-xs text-gray-500">+{project.team_members.length - 3} more</span>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <span
                     className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -407,17 +438,80 @@ export default function ProjectsPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
                 />
               </div>
-              {userProfile?.plan === "pro" && (
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Reminder Date</label>
+                <input
+                  type="date"
+                  value={formData.reminder_date}
+                  onChange={(e) => setFormData({ ...formData, reminder_date: e.target.value })}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                />
+              </div>
+              
+              {/* Team Member Selection (Agencies only) */}
+              {userProfile?.userType === "agency" && teamMembers.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Reminder Date</label>
-                  <input
-                    type="date"
-                    value={formData.reminder_date}
-                    onChange={(e) => setFormData({ ...formData, reminder_date: e.target.value })}
-                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
-                  />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                    Team Members Managing This Project (Select up to 3)
+                  </label>
+                  <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-300 rounded-lg p-3">
+                    {teamMembers.map((member) => {
+                      const teamMembersArray = formData.team_members || [];
+                      const isSelected = teamMembersArray.includes(member.id!);
+                      const isDisabled = !isSelected && teamMembersArray.length >= 3;
+                      
+                      return (
+                        <label
+                          key={member.id}
+                          className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${
+                            isSelected
+                              ? "bg-purple-50 border-2 border-purple-500"
+                              : isDisabled
+                              ? "bg-gray-50 opacity-50 cursor-not-allowed"
+                              : "hover:bg-gray-50 border-2 border-transparent"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => {
+                              const currentTeamMembers = formData.team_members || [];
+                              if (e.target.checked) {
+                                if (currentTeamMembers.length < 3) {
+                                  setFormData({
+                                    ...formData,
+                                    team_members: [...currentTeamMembers, member.id!],
+                                  });
+                                }
+                              } else {
+                                setFormData({
+                                  ...formData,
+                                  team_members: currentTeamMembers.filter((id) => id !== member.id),
+                                });
+                              }
+                            }}
+                            disabled={isDisabled && !isSelected}
+                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
+                          />
+                          <div className="flex items-center gap-2 flex-1">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                              {member.name.charAt(0).toUpperCase()}
+                            </div>
+                            <div className="flex-1">
+                              <p className="text-sm font-medium text-gray-900">{member.name}</p>
+                              <p className="text-xs text-gray-500">{member.role}</p>
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })}
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {(formData.team_members || []).length}/3 members selected
+                  </p>
                 </div>
               )}
+              
               {error && (
                 <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
                   {error}
@@ -437,6 +531,7 @@ export default function ProjectsPage() {
                       total_amount: "",
                       reminder_date: "",
                       completed_date: "",
+                      team_members: [],
                     });
                     setError("");
                   }}
@@ -456,14 +551,6 @@ export default function ProjectsPage() {
         </div>
       )}
 
-      {/* Upgrade Modal */}
-      <UpgradeModal
-        isOpen={showUpgradeModal}
-        onClose={() => setShowUpgradeModal(false)}
-        title="You've Reached Your Free Limit!"
-        message="You've reached your free active project limit. Upgrade to Pro for unlimited projects and unlock powerful features."
-        limitType="projects"
-      />
     </div>
   );
 }

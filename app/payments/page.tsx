@@ -262,8 +262,8 @@ export default function PaymentsPage() {
         )}
       </div>
 
-      {/* Pending Payments (Pro feature) */}
-      {userProfile?.plan !== "free" && totalPending > 0 && (
+      {/* Pending Payments */}
+      {totalPending > 0 && (
         <div className="bg-white rounded-lg shadow p-6">
           <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Payments</h2>
           <div className="space-y-3">

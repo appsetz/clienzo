@@ -48,8 +48,8 @@ export default function Header() {
             }
           }
 
-          // Check for reminders (Pro feature)
-          if (userProfile?.plan === "pro" && project.reminder_date) {
+          // Check for reminders
+          if (project.reminder_date) {
             const reminderDate = new Date(project.reminder_date);
             reminderDate.setHours(0, 0, 0, 0);
             const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
@@ -61,8 +61,8 @@ export default function Header() {
           }
         }
 
-        // Check for pending payments (Pro feature)
-        if (!hasNotifs && userProfile?.plan === "pro") {
+        // Check for pending payments
+        if (!hasNotifs) {
           for (const project of projects) {
             const projectPayments = payments.filter((p) => p.project_id === project.id);
             const paid = projectPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -105,6 +105,7 @@ export default function Header() {
         <div className="flex items-center gap-2 md:gap-4">
         <button
           onClick={() => setShowNotifications(!showNotifications)}
+          data-tour="notifications"
           className="relative p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition"
         >
           <Bell className="w-5 h-5" />

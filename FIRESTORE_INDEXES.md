@@ -64,6 +64,41 @@ The error message provides a direct link to create the index. Simply click the l
   - `project_id` (Ascending)
   - `date` (Descending)
 
+### 4. Team Members Collection (Agencies)
+
+**Index: `agency_id` + `createdAt`**
+- Collection: `team_members`
+- Fields:
+  - `agency_id` (Ascending)
+  - `createdAt` (Descending)
+
+**Create this index:**
+[Click here to create the index](https://console.firebase.google.com/v1/r/project/clienzo-27582/firestore/indexes?create_composite=Ck1wcm9qZWN0cy9jbGllbnpvLTI3NTgyL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy90ZWFtX21lbWJlcnMvaW5kZXhlcy9fEAEaDgoKYWdlbmN5X2lkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAw)
+
+### 5. Reviews Collection
+
+**Index: `approved` + `createdAt`**
+- Collection: `reviews`
+- Fields:
+  - `approved` (Ascending)
+  - `createdAt` (Descending)
+
+**Create this index:**
+[Click here to create the index](https://console.firebase.google.com/v1/r/project/clienzo-27582/firestore/indexes?create_composite=Ck1wcm9qZWN0cy9jbGllbnpvLTI3NTgyL2RhdGFiYXNlcy8oZGVmYXVsdCkvY29sbGVjdGlvbkdyb3Vwcy9yZXZpZXdzL2luZGV4ZXMvXxABGg0KCWFwcHJvdmVkEAEaDQoJY3JlYXRlZEF0EAIaDAoIX19uYW1lX18QAw)
+
+## Dashboard Queries Coverage
+
+All dashboards (Freelancer, Agency, Business) use the same core queries:
+- ✅ **Clients**: `user_id` + `createdAt` (Index #1)
+- ✅ **Projects**: `user_id` + `createdAt` (Index #2)
+- ✅ **Projects by Client**: `client_id` + `createdAt` (Index #3)
+- ✅ **Payments**: `user_id` + `date` (Index #4)
+- ✅ **Payments by Project**: `project_id` + `date` (Index #5)
+- ✅ **Team Members** (Agencies only): `agency_id` + `createdAt` (Index #6)
+- ✅ **Reviews** (Landing page): `approved` + `createdAt` (Index #7)
+
+All required indexes are now documented and included in `firestore.indexes.json`.
+
 ## How to Create Indexes Manually
 
 1. Go to [Firebase Console](https://console.firebase.google.com/)

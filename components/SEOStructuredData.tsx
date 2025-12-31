@@ -4,7 +4,7 @@ export default function SEOStructuredData() {
   const softwareAppSchema = {
     "@context": "https://schema.org",
     "@type": "SoftwareApplication",
-    "name": "Clienzo",
+    "name": "Clienova",
     "applicationCategory": "BusinessApplication",
     "operatingSystem": "Web",
     "offers": {
@@ -17,7 +17,7 @@ export default function SEOStructuredData() {
       "ratingValue": "4.8",
       "ratingCount": "150"
     },
-    "description": "Clienzo is the ultimate client management tool for freelancers and agencies. Manage clients, projects, payments, and deadlines all in one place.",
+    "description": "Clienova is the ultimate client management tool for freelancers and agencies. Manage clients, projects, payments, and deadlines all in one place.",
     "url": "https://clienzo.com",
     "logo": "https://clienzo.com/images/logo-symbol.png",
     "screenshot": "https://clienzo.com/images/logo-symbol.png",
@@ -34,7 +34,7 @@ export default function SEOStructuredData() {
   const webSiteSchema = {
     "@context": "https://schema.org",
     "@type": "WebSite",
-    "name": "Clienzo",
+    "name": "Clienova",
     "url": "https://clienzo.com",
     "potentialAction": {
       "@type": "SearchAction",
@@ -46,7 +46,7 @@ export default function SEOStructuredData() {
   const organizationSchema = {
     "@context": "https://schema.org",
     "@type": "Organization",
-    "name": "Clienzo",
+    "name": "Clienova",
     "url": "https://clienzo.com",
     "logo": "https://clienzo.com/images/logo-symbol.png",
     "sameAs": [

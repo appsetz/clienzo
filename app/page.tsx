@@ -4,8 +4,11 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/AuthContext";
 import Link from "next/link";
-import { Check, ArrowRight, Users, FolderKanban, CreditCard, TrendingUp, Clock, FileText, Shield, Instagram, Building2 } from "lucide-react";
+import { Check, ArrowRight, Users, FolderKanban, CreditCard, TrendingUp, Clock, FileText, Shield, Instagram, Building2, Mail } from "lucide-react";
 import Image from "next/image";
+import TestimonialsSection from "@/components/TestimonialsSection";
+import FAQSection from "@/components/FAQSection";
+import { HeroSection } from "@/components/landing/HeroSection";
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -27,132 +30,19 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
-      {/* Header - Sticky */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="container mx-auto px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <Image
-            src="/images/clienzo-logo.png"
-            alt="Clienzo"
-            width={100}
-            height={33}
-            className="object-contain w-20 sm:w-[120px]"
-          />
-        </div>
-        <nav className="hidden md:flex items-center gap-6">
-          <Link href="#about" className="text-gray-700 hover:text-purple-600 transition">
-            About
-          </Link>
-          <Link href="#how-it-works" className="text-gray-700 hover:text-purple-600 transition">
-            How It Works
-          </Link>
-          <Link href="#why" className="text-gray-700 hover:text-purple-600 transition">
-            Why Clienzo
-          </Link>
-          <Link href="#pricing" className="text-gray-700 hover:text-purple-600 transition">
-            Pricing
-          </Link>
-        </nav>
-        <div className="flex items-center gap-2 sm:gap-3 md:gap-4">
-          <Link
-            href="/login"
-            className="px-2 sm:px-3 md:px-4 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base text-gray-700 hover:text-purple-600 transition whitespace-nowrap"
-          >
-            Login
-          </Link>
-          <Link
-            href="/signup"
-            className="px-3 sm:px-4 md:px-6 py-1.5 sm:py-2 text-xs sm:text-sm md:text-base bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition whitespace-nowrap"
-          >
-            Get Started
-          </Link>
-        </div>
-        </div>
-      </header>
+      {/* Hero Section with Navigation */}
+      <HeroSection />
 
-      {/* Hero Section */}
-      <section className="container mx-auto px-4 sm:px-6 py-6 sm:py-8 md:py-20">
-        <div className="grid md:grid-cols-2 gap-6 md:gap-12 items-center">
-          <div className="text-left w-full order-2 md:order-1">
-            <p className="text-xs sm:text-sm md:text-base lg:text-lg text-gray-600 mb-2 sm:mb-3 md:mb-4 font-medium">
-              Hello agency owners and freelancers 👋
-            </p>
-            <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl xl:text-6xl font-bold text-gray-900 mb-3 sm:mb-4 md:mb-6 leading-tight">
-              Client Management
-              <br />
-              <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                Made Easy
-              </span>
-            </h1>
-            <p className="text-sm sm:text-base md:text-lg text-gray-600 mb-4 sm:mb-6 md:mb-8">
-              Simplify client and project management for freelancers and agencies.
-            </p>
-            <Link
-              href="/signup"
-              className="inline-flex items-center gap-2 px-4 sm:px-5 md:px-8 py-2 sm:py-2.5 md:py-4 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg text-sm sm:text-base md:text-lg font-semibold hover:shadow-xl transition mb-4 sm:mb-6 md:mb-8 w-full sm:w-auto justify-center sm:justify-start"
-            >
-              Get Started
-              <ArrowRight className="w-4 h-4 md:w-5 md:h-5" />
-            </Link>
-            <div className="space-y-2 md:space-y-3">
-              {[
-                "Track clients & projects",
-                "Manage payments effortlessly",
-                "Stay on top of your follow-ups",
-              ].map((feature, idx) => (
-                <div key={idx} className="flex items-center justify-start gap-2 md:gap-3">
-                  <Check className="w-4 h-4 md:w-5 md:h-5 text-green-500 flex-shrink-0" />
-                  <span className="text-sm md:text-base text-gray-700">{feature}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="flex items-center justify-center md:justify-end">
-            <div className="bg-gradient-to-br from-purple-100 to-pink-100 rounded-2xl p-8 md:p-12 w-full max-w-md">
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md">
-                    <Users className="w-6 h-6 text-purple-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Manage Clients</h3>
-                    <p className="text-sm text-gray-600">Organize all client information</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md">
-                    <FolderKanban className="w-6 h-6 text-pink-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Track Projects</h3>
-                    <p className="text-sm text-gray-600">Monitor project progress</p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white rounded-lg flex items-center justify-center shadow-md">
-                    <CreditCard className="w-6 h-6 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="font-semibold text-gray-900">Handle Payments</h3>
-                    <p className="text-sm text-gray-600">Track all transactions</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* What is Clienzo For Section */}
+      {/* What is Clienova For Section */}
       <section id="about" className="container mx-auto px-4 sm:px-6 py-12 md:py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
           <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
-            What is Clienzo For?
+            What is Clienova For?
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto">
-            Clienzo is designed for <strong className="text-gray-900">freelancers and agencies</strong> who want to streamline their client management, 
+            Clienova is designed for <strong className="text-gray-900">freelancers and agencies</strong> who want to streamline their client management, 
             track projects efficiently, and never miss a payment. Whether you&apos;re a solo freelancer or running a growing agency, 
-            Clienzo helps you stay organized and focused on what matters most - delivering great work.
+            Clienova helps you stay organized and focused on what matters most - delivering great work.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
             <div className="bg-gradient-to-br from-purple-50 to-pink-50 rounded-xl p-6">
@@ -180,12 +70,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* How Clienzo Works Section */}
+      {/* How Clienova Works Section */}
       <section id="how-it-works" className="container mx-auto px-4 sm:px-6 py-12 md:py-20">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
-              How Clienzo Works
+              How Clienova Works
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
               Get started in minutes and manage your clients like a pro
@@ -299,12 +189,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Clienzo Section */}
+      {/* Why Clienova Section */}
       <section id="why" className="container mx-auto px-4 sm:px-6 py-12 md:py-20 bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50">
         <div className="max-w-4xl mx-auto">
           <div className="text-center mb-12 md:mb-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4 md:mb-6">
-              Why Choose Clienzo?
+              Why Choose Clienova?
             </h2>
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
               Everything you need to manage your clients, projects, and payments in one simple platform
@@ -374,120 +264,11 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Pricing Section */}
-      <section id="pricing" className="container mx-auto px-4 sm:px-6 py-12 md:py-20">
-        <div className="text-left md:text-center mb-8 md:mb-12">
-          <h2 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-2 md:mb-4">Choose Your Plan</h2>
-          <p className="text-sm sm:text-base md:text-lg text-gray-600">Start free, upgrade when you need more</p>
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 lg:gap-8 max-w-6xl mx-auto">
-          {/* Free Plan */}
-          <div className="bg-white rounded-2xl p-6 md:p-8 shadow-lg border-2 border-gray-200">
-            <h3 className="text-2xl font-bold text-gray-900 mb-2">Free</h3>
-            <p className="text-4xl font-bold mb-6">
-              ₹0<span className="text-lg text-gray-500">/month</span>
-            </p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Up to 3 Clients",
-                "Up to 3 Active Projects",
-                "Basic Dashboard",
-                "Manual payment entry",
-                "Web access",
-              ].map((feature, idx) => (
-                <li key={idx} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-                  <span className="text-gray-700 text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="block w-full text-center px-6 py-3 bg-gray-100 text-gray-900 rounded-lg font-semibold hover:bg-gray-200 transition"
-            >
-              Get Started
-            </Link>
-          </div>
+      {/* Testimonials Section */}
+      <TestimonialsSection />
 
-          {/* Pro Plan */}
-          <div className="bg-gradient-to-br from-purple-600 to-pink-600 rounded-2xl p-6 md:p-8 shadow-xl text-white relative border-2 border-yellow-400">
-            <div className="absolute top-4 right-4 bg-yellow-400 text-yellow-900 px-3 py-1 rounded-full text-sm font-semibold animate-pulse">
-              🔥 LIMITED DEAL
-            </div>
-            <h3 className="text-2xl font-bold mb-2">Pro</h3>
-            <p className="text-4xl font-bold mb-2">
-              ₹39<span className="text-lg opacity-90">/month</span>
-            </p>
-            <p className="text-sm opacity-90 mb-2">
-              or ₹468/year
-            </p>
-            <p className="text-xs opacity-75 mb-2">
-              Save 0% with yearly billing (12 months)
-            </p>
-            <p className="text-xs bg-yellow-500/30 text-yellow-100 px-2 py-1 rounded mb-6 inline-block font-semibold">
-              ⚡ Limited time offer - Special launch price!
-            </p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Unlimited Clients",
-                "Unlimited Projects",
-                "Payment Analytics",
-                "Follow-up Reminders",
-                "Export Data",
-                "Revenue Insights",
-              ].map((feature, idx) => (
-                <li key={idx} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="block w-full text-center px-6 py-3 bg-white text-purple-600 rounded-lg font-semibold hover:bg-gray-100 transition"
-            >
-              Upgrade to Pro
-            </Link>
-          </div>
-
-          {/* Agency Plan */}
-          <div className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-6 md:p-8 shadow-xl text-white relative">
-            <div className="absolute top-4 right-4 bg-green-400 text-green-900 px-3 py-1 rounded-full text-sm font-semibold">
-              Best Value
-            </div>
-            <h3 className="text-2xl font-bold mb-2">Agency</h3>
-            <p className="text-4xl font-bold mb-2">
-              ₹499<span className="text-lg opacity-90">/year</span>
-            </p>
-            <p className="text-sm opacity-90 mb-6">
-              ₹{Math.round(499 / 12)}/month billed annually
-            </p>
-            <ul className="space-y-3 mb-8">
-              {[
-                "Unlimited Clients",
-                "Unlimited Projects",
-                "Payment Analytics",
-                "Follow-up Reminders",
-                "Export Data",
-                "Revenue Insights",
-                "Team Collaboration",
-                "White-label Options",
-              ].map((feature, idx) => (
-                <li key={idx} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 flex-shrink-0" />
-                  <span className="text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-            <Link
-              href="/signup"
-              className="block w-full text-center px-6 py-3 bg-white text-blue-600 rounded-lg font-semibold hover:bg-gray-100 transition"
-            >
-              Choose Agency Plan
-            </Link>
-          </div>
-        </div>
-      </section>
+      {/* FAQ Section */}
+      <FAQSection />
 
       {/* Provided By Section */}
       <section className="container mx-auto px-4 sm:px-6 py-12 md:py-20 bg-white">
@@ -507,7 +288,7 @@ export default function Home() {
           </div>
           <div className="max-w-2xl mx-auto">
             <p className="text-base sm:text-lg md:text-xl text-gray-700 mb-4 md:mb-6 leading-relaxed">
-              <strong className="text-gray-900">Appsetz</strong> is a development agency that developed Clienzo to help other agencies and freelancers scale their businesses. 
+              <strong className="text-gray-900">Appsetz</strong> is a development agency that developed Clienova to help other agencies and freelancers scale their businesses. 
               We understand the challenges of managing clients, projects, and payments, which is why we built this comprehensive solution.
             </p>
             <a
@@ -529,42 +310,49 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Image
-                src="/images/clienzo-logo.png"
-                alt="Clienzo"
-                width={100}
-                height={33}
-                className="object-contain"
+                src="/images/bg-removed-logo.png"
+                alt="Clienova"
+                width={200}
+                height={67}
+                className="h-16 w-auto object-contain"
               />
             </div>
           </div>
           <div>
             <h4 className="font-semibold text-black mb-4">Quick Links</h4>
             <ul className="space-y-2 text-gray-600">
-              <li><Link href="/dashboard" className="hover:text-purple-600">Dashboard</Link></li>
-              <li><Link href="/clients" className="hover:text-purple-600">Clients</Link></li>
-              <li><Link href="/projects" className="hover:text-purple-600">Projects</Link></li>
-              <li><Link href="/payments" className="hover:text-purple-600">Payments</Link></li>
+              <li><Link href="#about" className="hover:text-purple-600 transition">About</Link></li>
+              <li><Link href="#how-it-works" className="hover:text-purple-600 transition">How It Works</Link></li>
+              <li><Link href="#why" className="hover:text-purple-600 transition">Why Clienova</Link></li>
+              <li><Link href="#faq" className="hover:text-purple-600 transition">FAQ</Link></li>
+              <li><Link href="#pricing" className="hover:text-purple-600 transition">Pricing</Link></li>
             </ul>
           </div>
           <div>
-            <h4 className="font-semibold text-black mb-4">Resources</h4>
+            <h4 className="font-semibold text-black mb-4">Legal</h4>
             <ul className="space-y-2 text-gray-600">
-              <li><Link href="#" className="hover:text-purple-600">Help Center</Link></li>
-              <li><Link href="#" className="hover:text-purple-600">Support</Link></li>
-              <li><Link href="#" className="hover:text-purple-600">FAQs</Link></li>
+              <li><Link href="/terms" className="hover:text-purple-600 transition">Terms and Conditions</Link></li>
+              <li><Link href="/privacy" className="hover:text-purple-600 transition">Privacy Policy</Link></li>
             </ul>
           </div>
           <div>
             <h4 className="font-semibold text-black mb-4">Contact Us</h4>
             <ul className="space-y-2 text-gray-600">
-              <li>hello@clienzo.com</li>
-              <li>+91 98765 43210</li>
+              <li>
+                <a 
+                  href="mailto:clienova.app@gmail.com" 
+                  className="flex items-center gap-2 hover:text-purple-600 transition"
+                >
+                  <Mail className="w-4 h-4" />
+                  clienova.app@gmail.com
+                </a>
+              </li>
             </ul>
           </div>
         </div>
         <div className="text-center text-gray-600 pt-8 border-t border-gray-200">
           <div className="flex flex-col items-center gap-4">
-            <p>&copy; 2024 Clienzo. All rights reserved.</p>
+            <p>&copy; 2024 Clienova. All rights reserved.</p>
             <div className="flex items-center gap-3 text-base text-gray-500">
               <span>Powered by</span>
               <Image
