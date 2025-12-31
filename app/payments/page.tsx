@@ -480,7 +480,21 @@ export default function PaymentsPage() {
           setInvoiceData(null);
         }}
         invoiceData={invoiceData}
-        userProfile={userProfile || undefined}
+        userProfile={userProfile && userProfile.userType !== "business" ? {
+          name: userProfile.name,
+          email: userProfile.email,
+          phone: userProfile.phone,
+          location: userProfile.location,
+          bio: userProfile.bio,
+          userType: userProfile.userType === "business" ? undefined : userProfile.userType,
+          agencyName: userProfile.agencyName,
+          agencyPhone: userProfile.agencyPhone,
+          agencyEmail: userProfile.agencyEmail,
+          agencyAddress: userProfile.agencyAddress,
+          agencyWebsite: userProfile.agencyWebsite,
+          agencyDescription: userProfile.agencyDescription,
+          gstin: userProfile.gstin,
+        } : undefined}
       />
     </div>
   );

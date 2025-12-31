@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { X, ChevronRight, ChevronLeft, Sparkles } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -125,20 +125,7 @@ export default function DashboardTour({ isNewUser, userType = "freelancer" }: Da
 
   const steps = userType === "agency" ? agencySteps : freelancerSteps;
 
-  useEffect(() => {
-    // Check if user has completed the tour
-    const tourCompleted = localStorage.getItem(`tour_completed_${user?.uid}`);
-    
-    if (isNewUser && !tourCompleted) {
-      // Delay to ensure DOM is ready
-      setTimeout(() => {
-        setIsVisible(true);
-        updateTargetElement(0);
-      }, 1000);
-    }
-  }, [isNewUser, user?.uid]);
-
-  const updateTargetElement = (stepIndex: number) => {
+  const updateTargetElement = useCallback((stepIndex: number) => {
     const step = steps[stepIndex];
     if (!step) return;
 
@@ -146,12 +133,13 @@ export default function DashboardTour({ isNewUser, userType = "freelancer" }: Da
     const findElement = () => {
       const element = document.querySelector(step.target) as HTMLElement;
       if (element) {
-        // Reset any previous transitions
-        if (targetElement) {
-          targetElement.style.transition = "";
-        }
-        
-        setTargetElement(element);
+        setTargetElement((prev) => {
+          // Reset any previous transitions
+          if (prev) {
+            prev.style.transition = "";
+          }
+          return element;
+        });
         
         // Add entrance animation to element
         element.style.transition = "transform 0.3s ease-out, box-shadow 0.3s ease-out";
@@ -170,13 +158,26 @@ export default function DashboardTour({ isNewUser, userType = "freelancer" }: Da
     };
 
     findElement();
-  };
+  }, [steps]);
+
+  useEffect(() => {
+    // Check if user has completed the tour
+    const tourCompleted = localStorage.getItem(`tour_completed_${user?.uid}`);
+    
+    if (isNewUser && !tourCompleted) {
+      // Delay to ensure DOM is ready
+      setTimeout(() => {
+        setIsVisible(true);
+        updateTargetElement(0);
+      }, 1000);
+    }
+  }, [isNewUser, user?.uid, updateTargetElement]);
 
   useEffect(() => {
     if (isVisible && currentStep < steps.length) {
       updateTargetElement(currentStep);
     }
-  }, [currentStep, isVisible]);
+  }, [currentStep, isVisible, steps.length, updateTargetElement]);
 
   const handleNext = () => {
     // Add transition animation
