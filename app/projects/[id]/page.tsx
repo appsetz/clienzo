@@ -448,7 +448,7 @@ export default function ProjectDetailPage() {
             phone: userProfile.phone,
             location: userProfile.location,
             bio: userProfile.bio,
-            userType: userProfile.userType === "business" ? undefined : userProfile.userType,
+            userType: userProfile.userType,
             agencyName: userProfile.agencyName,
             agencyPhone: userProfile.agencyPhone,
             agencyEmail: userProfile.agencyEmail,
