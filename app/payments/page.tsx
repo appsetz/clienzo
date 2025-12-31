@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPayments, createPayment, deletePayment, Payment } from "@/lib/firebase/db";
 import { getProjects, Project } from "@/lib/firebase/db";
@@ -22,13 +22,7 @@ export default function PaymentsPage() {
   });
   const [error, setError] = useState("");
 
-  useEffect(() => {
-    if (user) {
-      loadData();
-    }
-  }, [user]);
-
-  const loadData = async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -67,7 +61,13 @@ export default function PaymentsPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
+
+  useEffect(() => {
+    if (user) {
+      loadData();
+    }
+  }, [user, loadData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

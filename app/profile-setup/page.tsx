@@ -154,7 +154,7 @@ export default function ProfileSetupPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
                 <User className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">I'm a Freelancer</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">I&apos;m a Freelancer</h3>
               <p className="text-gray-600">
                 Working independently and managing your own clients and projects
               </p>
@@ -167,7 +167,7 @@ export default function ProfileSetupPage() {
               <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
                 <Building2 className="w-8 h-8 text-white" />
               </div>
-              <h3 className="text-xl font-bold text-gray-900 mb-2">I'm an Agency</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">I&apos;m an Agency</h3>
               <p className="text-gray-600">
                 Running an agency with a team managing multiple clients
               </p>
@@ -389,8 +389,8 @@ export default function ProfileSetupPage() {
           setShowUpgradeModal(false);
           router.push("/dashboard");
         }}
-        title="You're at Your Free Plan Limits!"
-        message="You've reached your free plan limits. Upgrade to Pro to unlock unlimited clients, projects, and powerful features."
+        title="You&apos;re at Your Free Plan Limits!"
+        message="You&apos;ve reached your free plan limits. Upgrade to Pro to unlock unlimited clients, projects, and powerful features."
         limitType="general"
       />
     </div>

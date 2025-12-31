@@ -151,7 +151,7 @@ export default function Home() {
           </h2>
           <p className="text-base sm:text-lg md:text-xl text-gray-600 mb-8 md:mb-12 max-w-3xl mx-auto">
             Clienzo is designed for <strong className="text-gray-900">freelancers and agencies</strong> who want to streamline their client management, 
-            track projects efficiently, and never miss a payment. Whether you're a solo freelancer or running a growing agency, 
+            track projects efficiently, and never miss a payment. Whether you&apos;re a solo freelancer or running a growing agency, 
             Clienzo helps you stay organized and focused on what matters most - delivering great work.
           </p>
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 md:gap-8">
@@ -199,7 +199,7 @@ export default function Home() {
               <div className="flex-1">
                 <h3 className="text-xl md:text-2xl font-bold text-gray-900 mb-2">Sign Up & Complete Your Profile</h3>
                 <p className="text-gray-600 mb-4">
-                  Create your account in seconds. Tell us if you're a freelancer or agency, and we'll customize your experience.
+                  Create your account in seconds. Tell us if you&apos;re a freelancer or agency, and we&apos;ll customize your experience.
                 </p>
                 <ul className="space-y-2 text-gray-600">
                   <li className="flex items-start gap-2">
@@ -367,7 +367,7 @@ export default function Home() {
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">Secure & Private</h3>
               <p className="text-gray-600">
-                Your data is secure with Firebase's enterprise-grade security. All your information is encrypted and private.
+                Your data is secure with Firebase&apos;s enterprise-grade security. All your information is encrypted and private.
               </p>
             </div>
           </div>
