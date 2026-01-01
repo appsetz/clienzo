@@ -11,7 +11,8 @@ import { useFeatureFeedback } from "@/hooks/useFeatureFeedback";
 import RevenueIntelligence from "@/components/dashboard/RevenueIntelligence";
 import ArcChart from "@/components/dashboard/ArcChart";
 import PaymentTimeline from "@/components/dashboard/PaymentTimeline";
-import DashboardTour from "@/components/DashboardTour";
+import PageTour from "@/components/PageTour";
+import { getDashboardTourSteps } from "@/lib/tours";
 
 export default function FreelancerDashboard() {
   const { user, userProfile } = useAuth();
@@ -139,12 +140,13 @@ export default function FreelancerDashboard() {
     </Link>
   );
 
-  // Check if user is new (has no data)
-  const isNewUser = clients.length === 0 && projects.length === 0 && payments.length === 0;
-
   return (
     <div className="space-y-6">
-      <DashboardTour isNewUser={isNewUser} userType="freelancer" />
+      <PageTour 
+        pageId="dashboard-freelancer" 
+        steps={getDashboardTourSteps("freelancer")} 
+        userType="freelancer" 
+      />
       
       <div>
         <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">
@@ -227,7 +229,7 @@ export default function FreelancerDashboard() {
       )}
 
       {/* Arc Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6" data-tour="dashboard-charts">
         <ArcChart
           title="Project Status Distribution"
           data={projectStatusData}
@@ -245,18 +247,20 @@ export default function FreelancerDashboard() {
       </div>
 
       {/* Revenue Intelligence */}
-      <RevenueIntelligence
-        payments={payments}
-        projects={projects}
-        clients={clients}
-        userPlan={userProfile?.plan || "free"}
-      />
+      <div data-tour="dashboard-revenue">
+        <RevenueIntelligence
+          payments={payments}
+          projects={projects}
+          clients={clients}
+          userPlan={userProfile?.plan || "free"}
+        />
+      </div>
 
       {/* Payment Timeline */}
       <PaymentTimeline payments={payments} projects={projects} limit={5} />
 
       {/* Recent Projects */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" data-tour="dashboard-recent-projects">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-xl font-semibold text-gray-900">Recent Projects</h2>
           <Link href="/projects" className="text-sm text-purple-600 hover:text-purple-700 font-medium">

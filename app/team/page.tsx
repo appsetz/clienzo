@@ -17,6 +17,8 @@ import {
 import { Plus, Edit2, Trash2, Mail, User, X, Save, DollarSign, Calendar, ChevronDown, ChevronUp } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import Link from "next/link";
+import PageTour from "@/components/PageTour";
+import { getTeamTourSteps } from "@/lib/tours";
 
 export default function TeamPage() {
   const { user, userProfile } = useAuth();
@@ -236,7 +238,9 @@ export default function TeamPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-4">
+      <PageTour pageId="team" steps={getTeamTourSteps()} userType="agency" />
+      
+      <div className="flex items-center justify-between flex-wrap gap-4" data-tour="team-header">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Team Members</h1>
           <p className="text-gray-600">Manage your agency team</p>
@@ -250,6 +254,7 @@ export default function TeamPage() {
             View Payments
           </Link>
           <button
+            data-tour="team-add-button"
             onClick={() => setShowModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
           >
@@ -279,7 +284,7 @@ export default function TeamPage() {
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="bg-white rounded-lg shadow overflow-hidden" data-tour="team-list">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -338,6 +343,7 @@ export default function TeamPage() {
                             ₹{((memberPayments[member.id!] || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                           </span>
                           <button
+                            data-tour="team-payment-button"
                             onClick={() => {
                               setSelectedMemberForPayment(member);
                               setPaymentForm({
@@ -387,7 +393,7 @@ export default function TeamPage() {
                     {/* Last 6 Months Salary Dropdown */}
                     {expandedMembers.has(member.id!) && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 bg-gray-50">
+                        <td colSpan={6} className="px-6 py-4 bg-gray-50" data-tour="team-payments-view">
                           <div className="space-y-4">
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-lg font-semibold text-gray-900">Last 6 Months Salary</h4>

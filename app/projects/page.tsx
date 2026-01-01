@@ -8,6 +8,8 @@ import { Plus, Edit2, Trash2, Calendar, DollarSign, FolderKanban, Users } from "
 import { checkProjectLimit, getPlanLimits } from "@/lib/plan-limits";
 import { format } from "date-fns";
 import Link from "next/link";
+import PageTour from "@/components/PageTour";
+import { getProjectsTourSteps } from "@/lib/tours";
 
 export default function ProjectsPage() {
   const { user, userProfile } = useAuth();
@@ -201,7 +203,13 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <PageTour 
+        pageId="projects" 
+        steps={getProjectsTourSteps((userProfile?.userType === "agency" ? "agency" : "freelancer"))} 
+        userType={(userProfile?.userType === "agency" ? "agency" : "freelancer")} 
+      />
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" data-tour="projects-header">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Projects</h1>
           <p className="text-gray-600 mt-1">
@@ -210,6 +218,7 @@ export default function ProjectsPage() {
           </p>
         </div>
         <button
+          data-tour="projects-add-button"
           onClick={() => {
             setEditingProject(null);
             setFormData({
@@ -265,7 +274,7 @@ export default function ProjectsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" data-tour="projects-list">
           {projects.map((project) => {
             const client = clients.find((c) => c.id === project.client_id);
             return (
@@ -454,7 +463,7 @@ export default function ProjectsPage() {
               
               {/* Team Member Selection (Agencies only) */}
               {userProfile?.userType === "agency" && teamMembers.length > 0 && (
-                <div>
+                <div data-tour="projects-team-assignment">
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     Team Members Managing This Project (Select up to 3)
                   </label>

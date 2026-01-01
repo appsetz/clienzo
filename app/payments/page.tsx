@@ -8,6 +8,8 @@ import { Plus, Trash2, DollarSign, Calendar, FileText } from "lucide-react";
 import { format } from "date-fns";
 import InvoiceGenerator from "@/components/InvoiceGenerator";
 import { getClient } from "@/lib/firebase/db";
+import PageTour from "@/components/PageTour";
+import { getPaymentsTourSteps } from "@/lib/tours";
 
 type PaymentFormData = {
   project_id: string;
@@ -197,12 +199,15 @@ export default function PaymentsPage() {
 
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <PageTour pageId="payments" steps={getPaymentsTourSteps()} />
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" data-tour="payments-header">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Payments</h1>
           <p className="text-gray-600 mt-1">Track all your payments</p>
         </div>
         <button
+          data-tour="payments-add-button"
           onClick={() => setShowModal(true)}
           disabled={projects.length === 0}
           className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
@@ -288,7 +293,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Payment History */}
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-lg shadow p-6" data-tour="payments-list">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment History</h2>
         {payments.length === 0 ? (
           <div className="text-center py-12">
@@ -350,6 +355,7 @@ export default function PaymentsPage() {
                     <td className="py-3 px-2 sm:px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
+                          data-tour="payments-invoice-button"
                           onClick={() => handleGenerateInvoice(payment)}
                           className="p-1.5 sm:p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
                           title="Generate Invoice"
@@ -473,13 +479,14 @@ export default function PaymentsPage() {
       )}
 
       {/* Invoice Generator */}
-      <InvoiceGenerator
-        isOpen={showInvoice}
-        onClose={() => {
-          setShowInvoice(false);
-          setInvoiceData(null);
-        }}
-        invoiceData={invoiceData}
+      <div data-tour="payments-invoice-location">
+        <InvoiceGenerator
+          isOpen={showInvoice}
+          onClose={() => {
+            setShowInvoice(false);
+            setInvoiceData(null);
+          }}
+          invoiceData={invoiceData}
         userProfile={userProfile && userProfile.userType !== "business" ? {
           name: userProfile.name,
           email: userProfile.email,
@@ -494,7 +501,8 @@ export default function PaymentsPage() {
           agencyWebsite: userProfile.agencyWebsite,
           agencyDescription: userProfile.agencyDescription,
         } : undefined}
-      />
+        />
+      </div>
     </div>
   );
 }

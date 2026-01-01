@@ -6,6 +6,8 @@ import { getClients, createClient, updateClient, deleteClient, Client } from "@/
 import { Plus, Edit2, Trash2, Mail, Phone, User } from "lucide-react";
 import { checkClientLimit, getPlanLimits } from "@/lib/plan-limits";
 import Link from "next/link";
+import PageTour from "@/components/PageTour";
+import { getClientsTourSteps } from "@/lib/tours";
 
 export default function ClientsPage() {
   const { user, userProfile } = useAuth();
@@ -94,7 +96,9 @@ export default function ClientsPage() {
 
   return (
     <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <PageTour pageId="clients" steps={getClientsTourSteps()} />
+      
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" data-tour="clients-header">
         <div>
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Clients</h1>
           <p className="text-gray-600 mt-1">
@@ -103,6 +107,7 @@ export default function ClientsPage() {
           </p>
         </div>
         <button
+          data-tour="clients-add-button"
           onClick={() => {
             setEditingClient(null);
             setFormData({ name: "", email: "", phone: "", notes: "" });
@@ -137,7 +142,7 @@ export default function ClientsPage() {
           </button>
         </div>
       ) : (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6" data-tour="clients-list">
           {clients.map((client) => (
             <div key={client.id} className="bg-white rounded-lg shadow p-6 hover:shadow-lg transition">
               <div className="flex items-start justify-between mb-4">
