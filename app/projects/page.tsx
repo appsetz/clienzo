@@ -137,7 +137,7 @@ export default function ProjectsPage() {
     // All features are now available to everyone - no limits
 
     try {
-      const projectData = {
+      const projectData: any = {
         user_id: user.uid,
         client_id: formData.client_id,
         name: formData.name,
@@ -146,8 +146,12 @@ export default function ProjectsPage() {
         deadline: formData.deadline ? new Date(formData.deadline) : undefined,
         reminder_date: formData.reminder_date ? new Date(formData.reminder_date) : undefined,
         completed_date: formData.status === "completed" && formData.completed_date ? new Date(formData.completed_date) : undefined,
-        team_members: userProfile?.userType === "agency" && (formData.team_members || []).length > 0 ? formData.team_members : undefined,
       };
+      
+      // Only include team_members for agencies with selected members
+      if (userProfile?.userType === "agency" && formData.team_members && formData.team_members.length > 0) {
+        projectData.team_members = formData.team_members;
+      }
 
       if (editingProject) {
         await updateProject(editingProject.id!, projectData);

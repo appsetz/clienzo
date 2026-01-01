@@ -201,8 +201,12 @@ export const getProject = async (projectId: string): Promise<Project | null> => 
 
 export const createProject = async (project: Omit<Project, "id" | "createdAt" | "updatedAt">): Promise<string> => {
   const now = new Date();
+  
+  // Extract team_members separately to avoid including undefined in the spread
+  const { team_members, ...projectWithoutTeam } = project;
+  
   const projectData: any = {
-    ...project,
+    ...projectWithoutTeam,
     deadline: project.deadline ? toTimestamp(project.deadline) : null,
     reminder_date: project.reminder_date ? toTimestamp(project.reminder_date) : null,
     completed_date: project.completed_date ? toTimestamp(project.completed_date) : null,
@@ -211,10 +215,11 @@ export const createProject = async (project: Omit<Project, "id" | "createdAt" | 
   };
   
   // Only include team_members if it's defined and not empty
-  if (project.team_members && project.team_members.length > 0) {
-    projectData.team_members = project.team_members;
+  // Firestore doesn't accept undefined values, so we only add the field if it exists
+  if (team_members && team_members.length > 0) {
+    projectData.team_members = team_members;
   }
-  // If undefined, don't include it (Firestore will handle it)
+  // If undefined or empty, don't include it at all
   
   const docRef = await addDoc(collection(db, "projects"), projectData);
   return docRef.id;

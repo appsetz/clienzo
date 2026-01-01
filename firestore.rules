@@ -87,6 +87,7 @@ service cloud.firestore {
         (!('numberOfEmployees' in request.resource.data) || request.resource.data.numberOfEmployees is string) &&
         // System fields validation
         (!('profileComplete' in request.resource.data) || request.resource.data.profileComplete is bool) &&
+        (!('feedback_given' in request.resource.data) || request.resource.data.feedback_given is bool) &&
         (!('userType' in request.resource.data) || request.resource.data.userType in ['freelancer', 'agency']);
       
       // Users can delete their own profile

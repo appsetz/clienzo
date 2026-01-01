@@ -7,7 +7,7 @@ import { Users, FolderKanban, CreditCard, TrendingUp, AlertCircle, Clock, UserPl
 import { format } from "date-fns";
 import Link from "next/link";
 import ReviewPrompt from "@/components/ReviewPrompt";
-import { useReviewPrompt } from "@/hooks/useReviewPrompt";
+import { useFeatureFeedback } from "@/hooks/useFeatureFeedback";
 import RevenueIntelligence from "@/components/dashboard/RevenueIntelligence";
 import PaymentTimeline from "@/components/dashboard/PaymentTimeline";
 import TeamPaymentAnalytics from "@/components/dashboard/TeamPaymentAnalytics";
@@ -21,7 +21,7 @@ export default function AgencyDashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [teamMembers, setTeamMembers] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-  const { showPrompt: showReviewPrompt, handleReviewSubmitted, handleClose } = useReviewPrompt();
+  const { showPrompt: showReviewPrompt, handleFeedbackSubmitted, handleClose } = useFeatureFeedback();
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -324,7 +324,7 @@ export default function AgencyDashboard() {
       <ReviewPrompt
         isOpen={showReviewPrompt}
         onClose={handleClose}
-        onSubmitted={handleReviewSubmitted}
+        onSubmitted={handleFeedbackSubmitted}
       />
     </div>
   );

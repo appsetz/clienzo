@@ -7,7 +7,7 @@ import { Users, FolderKanban, CreditCard, TrendingUp, AlertCircle, Clock } from 
 import { format } from "date-fns";
 import Link from "next/link";
 import ReviewPrompt from "@/components/ReviewPrompt";
-import { useReviewPrompt } from "@/hooks/useReviewPrompt";
+import { useFeatureFeedback } from "@/hooks/useFeatureFeedback";
 import RevenueIntelligence from "@/components/dashboard/RevenueIntelligence";
 import ArcChart from "@/components/dashboard/ArcChart";
 import PaymentTimeline from "@/components/dashboard/PaymentTimeline";
@@ -19,7 +19,7 @@ export default function FreelancerDashboard() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
-  const { showPrompt: showReviewPrompt, handleReviewSubmitted, handleClose } = useReviewPrompt();
+  const { showPrompt: showReviewPrompt, handleFeedbackSubmitted, handleClose } = useFeatureFeedback();
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -307,11 +307,11 @@ export default function FreelancerDashboard() {
         )}
       </div>
 
-      <ReviewPrompt
-        isOpen={showReviewPrompt}
-        onClose={handleClose}
-        onSubmitted={handleReviewSubmitted}
-      />
+        <ReviewPrompt
+          isOpen={showReviewPrompt}
+          onClose={handleClose}
+          onSubmitted={handleFeedbackSubmitted}
+        />
     </div>
   );
 }

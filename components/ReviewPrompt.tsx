@@ -4,6 +4,8 @@ import { useState } from "react";
 import { X, Star, MessageSquare } from "lucide-react";
 import { createReview } from "@/lib/firebase/db";
 import { useAuth } from "@/contexts/AuthContext";
+import { doc, updateDoc } from "firebase/firestore";
+import { db } from "@/lib/firebase/config";
 
 interface ReviewPromptProps {
   isOpen: boolean;
@@ -12,7 +14,7 @@ interface ReviewPromptProps {
 }
 
 export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPromptProps) {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, refreshProfile } = useAuth();
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState("");
   const [featuresRequested, setFeaturesRequested] = useState("");
@@ -26,6 +28,7 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
 
     setSubmitting(true);
     try {
+      // Submit the review
       await createReview({
         user_id: user.uid,
         user_name: userProfile?.name || user.email || "Anonymous",
@@ -33,6 +36,15 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
         comment: comment.trim() || "Great experience!",
         features_requested: featuresRequested.trim() || undefined,
       });
+
+      // Mark feedback as given in user profile
+      await updateDoc(doc(db, "users", user.uid), {
+        feedback_given: true,
+      });
+
+      // Refresh profile to update context
+      await refreshProfile();
+
       setSubmitted(true);
       setTimeout(() => {
         onSubmitted();
@@ -69,12 +81,7 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
-        >
-          <X className="w-5 h-5" />
-        </button>
+        {/* Remove close button - feedback is required */}
 
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -133,19 +140,16 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
 
         <div className="flex gap-3">
           <button
-            onClick={onClose}
-            className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
-          >
-            Maybe Later
-          </button>
-          <button
             onClick={handleSubmit}
             disabled={rating === 0 || submitting}
-            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {submitting ? "Submitting..." : "Submit"}
+            {submitting ? "Submitting..." : "Submit Feedback"}
           </button>
         </div>
+        <p className="text-xs text-gray-500 text-center mt-3">
+          Your feedback helps us improve! Please share your experience.
+        </p>
       </div>
     </div>
   );
