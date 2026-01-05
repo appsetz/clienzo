@@ -20,11 +20,11 @@ export default function TermsPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-10">
             <div className="flex items-center gap-3 mb-8">
               <Image
-                src="/images/bg-removed-logo.png"
+                src="/images/clienova-logo-removebg-preview.png"
                 alt="Clienova"
                 width={150}
                 height={50}
-                className="h-12 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </div>
 
@@ -105,7 +105,7 @@ export default function TermsPage() {
               <section>
                 <h2 className="text-2xl font-semibold text-gray-900 mb-4">9. Termination</h2>
                 <p className="text-gray-700 leading-relaxed">
-                  We may terminate or suspend your account and access to the Service immediately, without prior notice or liability, for any reason, including if you breach these Terms. Upon termination, your right to use the Service will immediately cease. You may also terminate your account at any time by contacting us at clienova.app@gmail.com.
+                  We may terminate or suspend your account and access to the Service immediately, without prior notice or liability, for any reason, including if you breach these Terms. Upon termination, your right to use the Service will immediately cease. You may also terminate your account at any time by contacting us at support@clienova.com.
                 </p>
               </section>
 
@@ -122,7 +122,7 @@ export default function TermsPage() {
                   If you have any questions about these Terms and Conditions, please contact us at:
                 </p>
                 <p className="text-gray-700 leading-relaxed mt-2">
-                  Email: <a href="mailto:clienova.app@gmail.com" className="text-purple-600 hover:text-purple-700">clienova.app@gmail.com</a>
+                  Email: <a href="mailto:support@clienova.com" className="text-purple-600 hover:text-purple-700">support@clienova.com</a>
                 </p>
               </section>
             </div>

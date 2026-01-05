@@ -19,7 +19,7 @@ const faqs: FAQItem[] = [
   },
   {
     question: "How do I contact customer support if I need help?",
-    answer: "You can reach our customer support team through the feedback form in the app, or contact us directly at clienova.app@gmail.com. We're here to help you with any questions or issues you may have.",
+    answer: "You can reach our customer support team through the feedback form in the app, or contact us directly at support@clienova.com. We're here to help you with any questions or issues you may have.",
   },
 ];
 

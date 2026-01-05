@@ -58,11 +58,11 @@ export const HeroSection = () => {
               <div className="flex w-full justify-between lg:w-auto">
                 <Link href="/" aria-label="home" className="flex items-center space-x-2">
                   <Image
-                    src="/images/bg-removed-logo.png"
+                    src="/images/clienova-logo-removebg-preview.png"
                     alt="Clienova"
                     width={300}
                     height={100}
-                    className="h-20 md:h-24 lg:h-28 w-auto object-contain"
+                    className="h-8 md:h-10 lg:h-12 w-auto object-contain"
                   />
                 </Link>
                 <button
@@ -98,7 +98,7 @@ export const HeroSection = () => {
                   </Link>
                   <Link
                     href="/signup"
-                    className="px-4 py-2 text-sm bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg hover:shadow-lg transition text-center"
+                    className="px-4 py-2 text-sm bg-gradient-to-r from-slate-900 via-blue-700 to-blue-400 text-white rounded-lg hover:shadow-lg hover:shadow-blue-500/50 transition text-center"
                   >
                     <span>Get Started</span>
                   </Link>
@@ -131,7 +131,7 @@ export const HeroSection = () => {
               <div className="mt-8 animate-fade-in-up-delay-2">
                 <Link
                   href="/signup"
-                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition-all hover:scale-105"
+                  className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-slate-900 via-blue-700 to-blue-400 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition-all hover:scale-105"
                 >
                   <span>Get Started</span>
                   <ArrowRight className="w-5 h-5" />

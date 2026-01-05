@@ -20,11 +20,11 @@ export default function PrivacyPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-10">
             <div className="flex items-center gap-3 mb-8">
               <Image
-                src="/images/bg-removed-logo.png"
+                src="/images/clienova-logo-removebg-preview.png"
                 alt="Clienova"
                 width={150}
                 height={50}
-                className="h-12 w-auto object-contain"
+                className="h-10 w-auto object-contain"
               />
             </div>
 
@@ -119,7 +119,7 @@ export default function PrivacyPage() {
                 <ul className="list-disc list-inside space-y-2 text-gray-700 ml-4">
                   <li><strong>Access:</strong> You can access and review your data through your account dashboard</li>
                   <li><strong>Update:</strong> You can update your account information and data at any time</li>
-                  <li><strong>Delete:</strong> You can delete your account and data by contacting us at clienova.app@gmail.com</li>
+                  <li><strong>Delete:</strong> You can delete your account and data by contacting us at support@clienova.com</li>
                   <li><strong>Export:</strong> You can export your data through the Service&apos;s features</li>
                   <li><strong>Opt-out:</strong> You can opt-out of certain communications by adjusting your account settings</li>
                 </ul>
@@ -159,7 +159,7 @@ export default function PrivacyPage() {
                   If you have any questions about this Privacy Policy or our data practices, please contact us at:
                 </p>
                 <p className="text-gray-700 leading-relaxed mt-2">
-                  Email: <a href="mailto:clienova.app@gmail.com" className="text-purple-600 hover:text-purple-700">clienova.app@gmail.com</a>
+                  Email: <a href="mailto:support@clienova.com" className="text-purple-600 hover:text-purple-700">support@clienova.com</a>
                 </p>
               </section>
             </div>

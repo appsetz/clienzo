@@ -14,11 +14,10 @@ import {
   deleteTeamMemberPayment,
   TeamMemberPayment,
 } from "@/lib/firebase/db";
-import { Plus, Edit2, Trash2, Mail, User, X, Save, DollarSign, Calendar, ChevronDown, ChevronUp } from "lucide-react";
+import { Plus, Edit2, Trash2, Mail, User, X, Save, DollarSign, Calendar, ChevronDown, ChevronUp, Download } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import Link from "next/link";
-import PageTour from "@/components/PageTour";
-import { getTeamTourSteps } from "@/lib/tours";
+import { exportToCSV } from "@/lib/utils/exportData";
 
 export default function TeamPage() {
   const { user, userProfile } = useAuth();
@@ -139,6 +138,24 @@ export default function TeamPage() {
     }
   };
 
+  const handleExport = () => {
+    const exportData = teamMembers.map((member) => {
+      const payments = memberPayments[member.id || ""] || [];
+      const totalPayments = payments.reduce((sum, p) => sum + p.amount, 0);
+      
+      return {
+        "Staff Name": member.name,
+        "Email": member.email,
+        "Role": member.role,
+        "Total Payments (₹)": totalPayments.toLocaleString(),
+        "Number of Payments": payments.length,
+        "Created Date": member.createdAt ? format(new Date(member.createdAt), "MMM dd, yyyy") : "",
+      };
+    });
+    
+    exportToCSV(exportData, "team_staff");
+  };
+
   const handleCloseModal = () => {
     setShowModal(false);
     setEditingMember(null);
@@ -227,40 +244,45 @@ export default function TeamPage() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading team members...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <PageTour pageId="team" steps={getTeamTourSteps()} userType="agency" />
-      
-      <div className="flex items-center justify-between flex-wrap gap-4" data-tour="team-header">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Team Members</h1>
-          <p className="text-gray-600">Manage your agency team</p>
-        </div>
-        <div className="flex items-center gap-3">
-          <Link
-            href="/team/payments"
-            className="flex items-center gap-2 px-4 py-2 bg-white border-2 border-purple-600 text-purple-600 rounded-lg font-semibold hover:bg-purple-50 transition"
-          >
-            <DollarSign className="w-5 h-5" />
-            View Payments
-          </Link>
-          <button
-            data-tour="team-add-button"
-            onClick={() => setShowModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
-          >
-            <Plus className="w-5 h-5" />
-            Add Member
-          </button>
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">My Staff</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Manage your agency staff</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleExport}
+              disabled={teamMembers.length === 0}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <Download className="w-4 h-4" />
+              Export CSV
+            </button>
+            <Link
+              href="/team/payments"
+              className="flex items-center gap-2 px-3 py-2 border border-gray-200 text-gray-600 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
+            >
+              <DollarSign className="w-4 h-4" />
+              View Payments
+            </Link>
+            <button
+              onClick={() => setShowModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition"
+            >
+              <Plus className="w-4 h-4" />
+              Add Member
+            </button>
+          </div>
         </div>
       </div>
 
@@ -277,14 +299,14 @@ export default function TeamPage() {
           <p className="text-gray-600 mb-6">Add your first team member to get started</p>
           <button
             onClick={() => setShowModal(true)}
-            className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition"
           >
             <Plus className="w-5 h-5" />
             Add First Member
           </button>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-hidden" data-tour="team-list">
+        <div className="bg-white rounded-lg shadow overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-gray-50">
@@ -315,7 +337,7 @@ export default function TeamPage() {
                     <tr className="hover:bg-gray-50">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center">
-                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                          <div className="h-10 w-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
                             {member.name.charAt(0).toUpperCase()}
                           </div>
                           <div className="ml-4">
@@ -343,7 +365,6 @@ export default function TeamPage() {
                             ₹{((memberPayments[member.id!] || []).reduce((sum, p) => sum + p.amount, 0)).toLocaleString()}
                           </span>
                           <button
-                            data-tour="team-payment-button"
                             onClick={() => {
                               setSelectedMemberForPayment(member);
                               setPaymentForm({
@@ -375,7 +396,7 @@ export default function TeamPage() {
                           </button>
                           <button
                             onClick={() => handleEdit(member)}
-                            className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
+                            className="p-2 text-teal-600 hover:text-purple-700 hover:bg-teal-50 rounded-lg transition"
                             title="Edit Member"
                           >
                             <Edit2 className="w-4 h-4" />
@@ -393,13 +414,13 @@ export default function TeamPage() {
                     {/* Last 6 Months Salary Dropdown */}
                     {expandedMembers.has(member.id!) && (
                       <tr>
-                        <td colSpan={6} className="px-6 py-4 bg-gray-50" data-tour="team-payments-view">
+                        <td colSpan={6} className="px-6 py-4 bg-gray-50">
                           <div className="space-y-4">
                             <div className="flex items-center justify-between mb-4">
                               <h4 className="text-lg font-semibold text-gray-900">Last 6 Months Salary</h4>
                               <Link
                                 href={`/team/payments?member=${member.id}`}
-                                className="text-sm text-purple-600 hover:text-purple-700 font-medium flex items-center gap-1"
+                                className="text-sm text-teal-600 hover:text-purple-700 font-medium flex items-center gap-1"
                               >
                                 View More
                                 <ChevronDown className="w-4 h-4 rotate-[-90deg]" />
@@ -472,7 +493,7 @@ export default function TeamPage() {
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                   placeholder="0.00"
                 />
               </div>
@@ -484,7 +505,7 @@ export default function TeamPage() {
                   value={paymentForm.date}
                   onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                 />
               </div>
 
@@ -494,7 +515,7 @@ export default function TeamPage() {
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                   placeholder="Payment notes..."
                 />
               </div>
@@ -515,7 +536,7 @@ export default function TeamPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+                  className="flex-1 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition"
                 >
                   Add Payment
                 </button>
@@ -548,7 +569,7 @@ export default function TeamPage() {
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                   placeholder="John Doe"
                 />
               </div>
@@ -560,7 +581,7 @@ export default function TeamPage() {
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                   placeholder="john@example.com"
                 />
               </div>
@@ -572,7 +593,7 @@ export default function TeamPage() {
                   value={formData.role}
                   onChange={(e) => setFormData({ ...formData, role: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 focus:border-transparent text-gray-900"
                   placeholder="Developer, Designer, Manager, etc."
                 />
               </div>
@@ -589,7 +610,7 @@ export default function TeamPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center gap-2"
+                  className="flex-1 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition flex items-center justify-center gap-2"
                 >
                   <Save className="w-4 h-4" />
                   {editingMember ? "Update" : "Add"} Member

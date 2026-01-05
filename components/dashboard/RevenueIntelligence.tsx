@@ -10,6 +10,7 @@ interface RevenueIntelligenceProps {
   projects: Project[];
   clients: Client[];
   userPlan: "free" | "pro" | "agency";
+  selectedMonth?: Date;
 }
 
 export default function RevenueIntelligence({
@@ -17,6 +18,7 @@ export default function RevenueIntelligence({
   projects,
   clients,
   userPlan,
+  selectedMonth = new Date(),
 }: RevenueIntelligenceProps) {
   const [analyticsPeriod, setAnalyticsPeriod] = useState<"week" | "month" | "year">("month");
 
@@ -33,11 +35,11 @@ export default function RevenueIntelligence({
     return weekPayments.reduce((sum, p) => sum + p.amount, 0);
   }, [payments]);
 
-  // Calculate monthly revenue for last 6 months
+  // Calculate monthly revenue for last 6 months ending at selectedMonth
   const monthlyRevenue = useMemo(() => {
     const months = eachMonthOfInterval({
-      start: subMonths(new Date(), 5),
-      end: new Date(),
+      start: subMonths(selectedMonth, 5),
+      end: selectedMonth,
     });
 
     return months.map((month) => {
@@ -53,7 +55,7 @@ export default function RevenueIntelligence({
         revenue,
       };
     });
-  }, [payments]);
+  }, [payments, selectedMonth]);
 
   // Calculate yearly revenue for last 3 years
   const yearlyRevenue = useMemo(() => {

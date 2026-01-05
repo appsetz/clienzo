@@ -49,6 +49,9 @@ export interface Payment {
   date: Date;
   notes?: string;
   payment_type?: "advance" | "partial" | "final";
+  payment_method?: "upi" | "cash" | "bank_account";
+  upi_id?: string;
+  bank_account?: string;
   createdAt: Date;
 }
 
@@ -316,6 +319,15 @@ export const createPayment = async (payment: Omit<Payment, "id" | "createdAt">):
   if (payment.payment_type) {
     paymentData.payment_type = payment.payment_type;
   }
+  if (payment.payment_method) {
+    paymentData.payment_method = payment.payment_method;
+  }
+  if (payment.upi_id) {
+    paymentData.upi_id = payment.upi_id;
+  }
+  if (payment.bank_account) {
+    paymentData.bank_account = payment.bank_account;
+  }
   
   const docRef = await addDoc(collection(db, "payments"), paymentData);
   return docRef.id;
@@ -448,6 +460,10 @@ export interface TeamMemberPayment {
   date: Date;
   notes?: string;
   project_id?: string; // Optional: link to a project if payment is project-related
+  payment_method?: "upi" | "cash" | "bank_account" | "card";
+  upi_id?: string;
+  bank_account?: string;
+  transaction_id?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -534,11 +550,113 @@ export const updateTeamMemberPayment = async (paymentId: string, updates: Partia
   if (updates.date !== undefined) updateData.date = toTimestamp(updates.date);
   if (updates.notes !== undefined) updateData.notes = updates.notes || null;
   if (updates.project_id !== undefined) updateData.project_id = updates.project_id || null;
+  if (updates.payment_method !== undefined) updateData.payment_method = updates.payment_method || null;
+  if (updates.upi_id !== undefined) updateData.upi_id = updates.upi_id || null;
+  if (updates.bank_account !== undefined) updateData.bank_account = updates.bank_account || null;
   
   await updateDoc(docRef, updateData);
 };
 
 export const deleteTeamMemberPayment = async (paymentId: string): Promise<void> => {
   await deleteDoc(doc(db, "team_member_payments", paymentId));
+};
+
+// Investments (Agency only)
+export interface Investment {
+  id?: string;
+  agency_id: string;
+  name: string;
+  amount: number;
+  date: Date;
+  payment_method: "upi" | "cash" | "card";
+  upi_id?: string;
+  transaction_id?: string;
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const getInvestments = async (agencyId: string): Promise<Investment[]> => {
+  try {
+    const q = query(
+      collection(db, "investments"),
+      where("agency_id", "==", agencyId),
+      orderBy("date", "desc")
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => {
+      const data = doc.data();
+      return {
+        id: doc.id,
+        ...data,
+        date: toDate(data.date),
+        createdAt: toDate(data.createdAt),
+        updatedAt: toDate(data.updatedAt),
+      };
+    }) as Investment[];
+  } catch (error: any) {
+    console.error("Error fetching investments:", error);
+    if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+      throw new Error(`Firestore index required for investments collection. ${error?.message || "Please create the index."}`);
+    }
+    throw error;
+  }
+};
+
+export const createInvestment = async (investment: Omit<Investment, "id" | "createdAt" | "updatedAt">): Promise<string> => {
+  try {
+    const now = new Date();
+    const investmentData: any = {
+      agency_id: investment.agency_id,
+      name: investment.name,
+      amount: investment.amount,
+      date: toTimestamp(investment.date),
+      payment_method: investment.payment_method,
+      createdAt: toTimestamp(now),
+      updatedAt: toTimestamp(now),
+    };
+    
+    // Only include optional fields if they have values
+    if (investment.upi_id) {
+      investmentData.upi_id = investment.upi_id;
+    }
+    if (investment.transaction_id) {
+      investmentData.transaction_id = investment.transaction_id;
+    }
+    if (investment.notes) {
+      investmentData.notes = investment.notes;
+    }
+    
+    const docRef = await addDoc(collection(db, "investments"), investmentData);
+    return docRef.id;
+  } catch (error: any) {
+    console.error("Error creating investment:", error);
+    throw error;
+  }
+};
+
+export const updateInvestment = async (investmentId: string, updates: Partial<Investment>): Promise<void> => {
+  try {
+    const updateData: any = {
+      updatedAt: toTimestamp(new Date()),
+    };
+    
+    if (updates.name !== undefined) updateData.name = updates.name;
+    if (updates.amount !== undefined) updateData.amount = updates.amount;
+    if (updates.date !== undefined) updateData.date = toTimestamp(updates.date);
+    if (updates.payment_method !== undefined) updateData.payment_method = updates.payment_method;
+    if (updates.upi_id !== undefined) updateData.upi_id = updates.upi_id || null;
+    if (updates.transaction_id !== undefined) updateData.transaction_id = updates.transaction_id || null;
+    if (updates.notes !== undefined) updateData.notes = updates.notes || null;
+    
+    await updateDoc(doc(db, "investments", investmentId), updateData);
+  } catch (error: any) {
+    console.error("Error updating investment:", error);
+    throw error;
+  }
+};
+
+export const deleteInvestment = async (investmentId: string): Promise<void> => {
+  await deleteDoc(doc(db, "investments", investmentId));
 };
 

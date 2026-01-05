@@ -1,0 +1,116 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ============================================
+    // FIREBASE STORAGE SECURITY RULES
+    // ============================================
+    // These rules control access to Firebase Storage
+    // for profile photos and other user uploads.
+    // ============================================
+    
+    // ============================================
+    // PROFILE PHOTOS
+    // ============================================
+    // Users can upload/update/delete their own profile photos
+    // Paths: profile-photos/{userId} or profile-photos/{userId}/{filename}
+    // ============================================
+    
+    // Profile photos with filename (preferred)
+    match /profile-photos/{userId}/{fileName} {
+      // Allow read access to anyone (profile photos can be publicly viewable)
+      allow read: if true;
+      
+      // Allow write (create, update, delete) only for the owner
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        // Validate file size (max 5MB)
+        && request.resource.size < 5 * 1024 * 1024
+        // Validate file type (only images)
+        && request.resource.contentType.matches('image/.*');
+      
+      // Allow delete for the owner
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // Profile photos without filename (for backward compatibility)
+    match /profile-photos/{userId} {
+      // Allow read access to anyone (profile photos can be publicly viewable)
+      allow read: if true;
+      
+      // Allow write (create, update, delete) only for the owner
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        // Validate file size (max 5MB)
+        && request.resource.size < 5 * 1024 * 1024
+        // Validate file type (only images)
+        && request.resource.contentType.matches('image/.*');
+      
+      // Allow delete for the owner
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // AGENCY LOGOS
+    // ============================================
+    // Agencies can upload their company logos
+    // Path: agency-logos/{userId}/{filename}
+    // ============================================
+    
+    match /agency-logos/{userId}/{fileName} {
+      // Allow read access to anyone (logos can be publicly viewable)
+      allow read: if true;
+      
+      // Allow write only for the owner
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        // Validate file size (max 2MB for logos)
+        && request.resource.size < 2 * 1024 * 1024
+        // Validate file type (only images)
+        && request.resource.contentType.matches('image/.*');
+      
+      // Allow delete for the owner
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // INVOICE ATTACHMENTS (Future use)
+    // ============================================
+    // Users can upload invoice-related files
+    // Path: invoices/{userId}/{filename}
+    // ============================================
+    
+    match /invoices/{userId}/{fileName} {
+      // Allow read only for the owner
+      allow read: if request.auth != null 
+        && request.auth.uid == userId;
+      
+      // Allow write only for the owner
+      allow write: if request.auth != null 
+        && request.auth.uid == userId
+        // Validate file size (max 10MB for documents)
+        && request.resource.size < 10 * 1024 * 1024
+        // Validate file type (images and PDFs)
+        && (request.resource.contentType.matches('image/.*') 
+            || request.resource.contentType == 'application/pdf');
+      
+      // Allow delete for the owner
+      allow delete: if request.auth != null 
+        && request.auth.uid == userId;
+    }
+    
+    // ============================================
+    // DENY ALL OTHER PATHS
+    // ============================================
+    // By default, deny access to all other paths
+    // ============================================
+    
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+

@@ -3,6 +3,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import SEOStructuredData from "@/components/SEOStructuredData";
+import MobileBlock from "@/components/MobileBlock";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -67,16 +68,16 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: "/images/logo-symbol.png", sizes: "64x64", type: "image/png" },
-      { url: "/images/logo-symbol.png", sizes: "48x48", type: "image/png" },
-      { url: "/images/logo-symbol.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "64x64", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "48x48", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: "/images/logo-symbol.png", sizes: "180x180", type: "image/png" },
-      { url: "/images/logo-symbol.png", sizes: "152x152", type: "image/png" },
-      { url: "/images/logo-symbol.png", sizes: "120x120", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "180x180", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "152x152", type: "image/png" },
+      { url: "/images/favicon.png", sizes: "120x120", type: "image/png" },
     ],
-    shortcut: "/images/logo-symbol.png",
+    shortcut: "/images/favicon.png",
   },
   manifest: "/manifest.json",
   category: "business",
@@ -91,6 +92,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth">
       <body className={inter.className}>
         <SEOStructuredData />
+        <MobileBlock />
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

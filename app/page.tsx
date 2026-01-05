@@ -63,57 +63,6 @@ export default function Home() {
       {/* Hero Section with Navigation */}
       <HeroSection />
 
-      {/* Layered Text Section - Goals */}
-      <section className="bg-gradient-to-br from-purple-50 via-blue-50 to-pink-50 py-16 md:py-24">
-        <div className="container mx-auto px-4">
-          <div className="mx-auto py-24 font-sans font-black tracking-[-3px] md:tracking-[-4px] uppercase text-black antialiased" style={{ fontSize: "clamp(48px, 8vw, 120px)" }}>
-            <ul className="list-none p-0 m-0 flex flex-col items-center">
-              {[
-                { top: "\u00A0", bottom: "CLIENT" },
-                { top: "CLIENT", bottom: "MANAGEMENT" },
-                { top: "MANAGEMENT", bottom: "SIMPLIFIED" },
-                { top: "SIMPLIFIED", bottom: "PROJECTS" },
-                { top: "PROJECTS", bottom: "TRACKED" },
-                { top: "TRACKED", bottom: "PAYMENTS" },
-                { top: "PAYMENTS", bottom: "ORGANIZED" },
-                { top: "ORGANIZED", bottom: "GROWTH" },
-                { top: "GROWTH", bottom: "SUCCESS" },
-                { top: "SUCCESS", bottom: "\u00A0" },
-              ].map((line, index) => {
-                const centerIndex = 5;
-                const translateX = (index - centerIndex) * 50;
-                return (
-                  <li
-                    key={index}
-                    className="overflow-hidden relative h-[70px] md:h-[90px]"
-                    style={{
-                      transform: `translateX(${translateX}px) skew(${index % 2 === 0 ? "60deg, -30deg" : "0deg, -30deg"}) scaleY(${index % 2 === 0 ? "0.66667" : "1.33333"})`,
-                    }}
-                  >
-                    <p
-                      className="px-[20px] md:px-[30px] align-top whitespace-nowrap m-0 h-[70px] leading-[60px] md:h-[90px] md:leading-[80px]"
-                      style={{
-                        fontSize: "inherit",
-                      }}
-                    >
-                      {line.top}
-                    </p>
-                    <p
-                      className="px-[20px] md:px-[30px] align-top whitespace-nowrap m-0 h-[70px] leading-[60px] md:h-[90px] md:leading-[80px]"
-                      style={{
-                        fontSize: "inherit",
-                      }}
-                    >
-                      {line.bottom}
-                    </p>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        </div>
-      </section>
-
       {/* What is Clienova For Section */}
       <section id="about" className="container mx-auto px-4 sm:px-6 py-12 md:py-20 bg-white">
         <div className="max-w-4xl mx-auto text-center">
@@ -391,11 +340,11 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Image
-                src="/images/bg-removed-logo.png"
+                src="/images/clienova-logo-removebg-preview.png"
                 alt="Clienova"
                 width={200}
                 height={67}
-                className="h-16 w-auto object-contain"
+                className="h-12 w-auto object-contain"
               />
             </div>
           </div>
@@ -421,11 +370,11 @@ export default function Home() {
             <ul className="space-y-2 text-gray-600">
               <li>
                 <a 
-                  href="mailto:clienova.app@gmail.com" 
+                  href="mailto:support@clienova.com" 
                   className="flex items-center gap-2 hover:text-purple-600 transition"
                 >
                   <Mail className="w-4 h-4" />
-                  clienova.app@gmail.com
+                  support@clienova.com
                 </a>
               </li>
             </ul>

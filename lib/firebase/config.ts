@@ -1,6 +1,7 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth } from "firebase/auth";
-import { getFirestore, Firestore, enableIndexedDbPersistence } from "firebase/firestore";
+import { getFirestore, Firestore, initializeFirestore, persistentLocalCache } from "firebase/firestore";
+import { getStorage, FirebaseStorage } from "firebase/storage";
 import { getAnalytics, Analytics } from "firebase/analytics";
 
 // Firebase configuration
@@ -24,22 +25,34 @@ if (getApps().length === 0) {
 
 // Initialize services
 export const auth: Auth = getAuth(app);
-export const db: Firestore = getFirestore(app);
 
-// Enable offline persistence (only in browser)
-if (typeof window !== "undefined") {
-  enableIndexedDbPersistence(db).catch((err) => {
-    if (err.code === "failed-precondition") {
-      // Multiple tabs open, persistence can only be enabled in one tab at a time
-      console.warn("Firestore persistence failed: Multiple tabs open");
-    } else if (err.code === "unimplemented") {
-      // The current browser does not support all of the features required
-      console.warn("Firestore persistence not available in this browser");
-    } else {
-      console.error("Firestore persistence error:", err);
+// Initialize Firestore
+// For browser: try persistent cache. For server: use default.
+export const db: Firestore = (() => {
+  if (typeof window !== "undefined") {
+    // Browser: try to initialize with persistent cache
+    try {
+      return initializeFirestore(app, {
+        localCache: persistentLocalCache()
+      });
+    } catch (error: any) {
+      // If already initialized (failed-precondition) or other error, use getFirestore
+      if (error.code === "failed-precondition" || error.code === "already-in-use") {
+        // Already initialized, use existing instance
+        return getFirestore(app);
+      }
+      // Other error, fall back to default
+      console.warn("Failed to initialize persistent cache, using default:", error);
+      return getFirestore(app);
     }
-  });
-}
+  } else {
+    // Server-side: use default initialization
+    return getFirestore(app);
+  }
+})();
+
+// Initialize Storage
+export const storage: FirebaseStorage = getStorage(app);
 
 // Initialize Analytics (only in browser)
 export const analytics: Analytics | null = 

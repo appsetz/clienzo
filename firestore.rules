@@ -85,6 +85,8 @@ service cloud.firestore {
         (!('agencyWebsite' in request.resource.data) || request.resource.data.agencyWebsite is string) &&
         (!('agencyDescription' in request.resource.data) || request.resource.data.agencyDescription is string) &&
         (!('numberOfEmployees' in request.resource.data) || request.resource.data.numberOfEmployees is string) &&
+        // Profile photo URL (stored in Firebase Storage)
+        (!('photoURL' in request.resource.data) || request.resource.data.photoURL is string || request.resource.data.photoURL == null) &&
         // System fields validation
         (!('profileComplete' in request.resource.data) || request.resource.data.profileComplete is bool) &&
         (!('feedback_given' in request.resource.data) || request.resource.data.feedback_given is bool) &&
@@ -220,7 +222,10 @@ service cloud.firestore {
         request.resource.data.createdAt is timestamp &&
         // Validate optional fields
         (!('notes' in request.resource.data) || request.resource.data.notes is string) &&
-        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null);
+        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null) &&
+        (!('payment_method' in request.resource.data) || request.resource.data.payment_method in ['upi', 'cash', 'bank_account'] || request.resource.data.payment_method == null) &&
+        (!('upi_id' in request.resource.data) || request.resource.data.upi_id is string || request.resource.data.upi_id == null) &&
+        (!('bank_account' in request.resource.data) || request.resource.data.bank_account is string || request.resource.data.bank_account == null);
       
       // Users can update their own payments
       allow update: if isAuthenticated() && ownsResource() &&
@@ -236,7 +241,10 @@ service cloud.firestore {
         request.resource.data.date is timestamp &&
         // Validate optional fields
         (!('notes' in request.resource.data) || request.resource.data.notes is string) &&
-        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null);
+        (!('payment_type' in request.resource.data) || request.resource.data.payment_type in ['advance', 'partial', 'final'] || request.resource.data.payment_type == null) &&
+        (!('payment_method' in request.resource.data) || request.resource.data.payment_method in ['upi', 'cash', 'bank_account'] || request.resource.data.payment_method == null) &&
+        (!('upi_id' in request.resource.data) || request.resource.data.upi_id is string || request.resource.data.upi_id == null) &&
+        (!('bank_account' in request.resource.data) || request.resource.data.bank_account is string || request.resource.data.bank_account == null);
       
       // Users can delete their own payments
       allow delete: if isAuthenticated() && ownsResource();
@@ -303,7 +311,10 @@ service cloud.firestore {
         request.resource.data.updatedAt is timestamp &&
         // Validate optional fields
         (!('notes' in request.resource.data) || request.resource.data.notes is string || request.resource.data.notes == null) &&
-        (!('project_id' in request.resource.data) || request.resource.data.project_id is string || request.resource.data.project_id == null);
+        (!('project_id' in request.resource.data) || request.resource.data.project_id is string || request.resource.data.project_id == null) &&
+        (!('payment_method' in request.resource.data) || request.resource.data.payment_method in ['upi', 'cash', 'bank_account'] || request.resource.data.payment_method == null) &&
+        (!('upi_id' in request.resource.data) || request.resource.data.upi_id is string || request.resource.data.upi_id == null) &&
+        (!('bank_account' in request.resource.data) || request.resource.data.bank_account is string || request.resource.data.bank_account == null);
       
       // Agencies can update their own payments (but not change agency_id or team_member_id)
       allow update: if isAuthenticated() &&
@@ -351,6 +362,133 @@ service cloud.firestore {
         (!('features_requested' in request.resource.data) || request.resource.data.features_requested is string) &&
         (!('approved' in request.resource.data) || request.resource.data.approved is bool);
       allow update, delete: if false; // Only admins can update/delete (handled server-side)
+    }
+    
+    // ============================================
+    // EMAIL AUTOMATION COLLECTIONS
+    // ============================================
+    // Used by Email Automation feature:
+    // - email_settings: User email automation settings
+    // - email_templates: Email templates for automation
+    // - automation_rules: Rules for when to send emails
+    // - email_logs: Logs of sent emails (read-only for users)
+    // ============================================
+    
+    // Email Settings - uses userId as document ID
+    match /email_settings/{userId} {
+      allow read, write: if isAuthenticated() && isOwner(userId);
+    }
+    
+    // Email Templates - uses userId field in documents
+    match /email_templates/{templateId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId;
+      allow delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Automation Rules - uses userId field in documents
+    match /automation_rules/{ruleId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      allow update: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid &&
+        request.resource.data.userId == resource.data.userId;
+      allow delete: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+    }
+    
+    // Email Logs - uses userId field, read-only for users (system writes)
+    match /email_logs/{logId} {
+      allow read: if isAuthenticated() && 
+        resource.data.userId == request.auth.uid;
+      allow write: if false; // Only system/server can write logs
+    }
+    
+    // Email Queue - users can create queue items, system processes them
+    match /email_queue/{queueId} {
+      allow create: if isAuthenticated() && 
+        request.resource.data.userId == request.auth.uid;
+      // Allow reading queue items (for users to see their queued emails, and for queue processor)
+      allow read: if true; // Queue processor needs to read all items
+      // Allow updates for queue processing (updating status, sentAt, messageId, retryCount, error, sendAt)
+      // Only allow updating processing-related fields, core data must remain unchanged
+      // Note: invoiceData, emailType, userProfile are optional fields for invoice emails
+      allow update: if 
+        request.resource.data.userId == resource.data.userId &&
+        request.resource.data.to == resource.data.to &&
+        request.resource.data.subject == resource.data.subject &&
+        request.resource.data.body == resource.data.body &&
+        request.resource.data.replyTo == resource.data.replyTo &&
+        request.resource.data.fromName == resource.data.fromName &&
+        request.resource.data.createdAt == resource.data.createdAt &&
+        // Allow invoiceData, emailType, userProfile to remain unchanged (they're optional)
+        (!('invoiceData' in request.resource.data) || request.resource.data.invoiceData == resource.data.invoiceData || !('invoiceData' in resource.data)) &&
+        (!('emailType' in request.resource.data) || request.resource.data.emailType == resource.data.emailType || !('emailType' in resource.data)) &&
+        (!('userProfile' in request.resource.data) || request.resource.data.userProfile == resource.data.userProfile || !('userProfile' in resource.data));
+      allow delete: if isAuthenticated() &&
+        resource.data.userId == request.auth.uid; // Allow users to delete their own queued emails
+    }
+    
+    // ============================================
+    // INVESTMENTS COLLECTION
+    // ============================================
+    // Used ONLY by Agency Dashboard:
+    // - Agencies can track their investments/payments received
+    // ============================================
+    
+    match /investments/{investmentId} {
+      // Agencies can read their own investments
+      allow read: if isAuthenticated() && 
+        resource.data.agency_id == request.auth.uid;
+      
+      // Agencies can create investments for themselves
+      allow create: if isAuthenticated() && 
+        request.auth.uid == request.resource.data.agency_id &&
+        // Validate required fields
+        request.resource.data.agency_id is string &&
+        request.resource.data.name is string &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 999999999 &&
+        request.resource.data.date is timestamp &&
+        request.resource.data.payment_method in ['upi', 'cash', 'card'] &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('upi_id' in request.resource.data) || request.resource.data.upi_id is string || request.resource.data.upi_id == null) &&
+        (!('transaction_id' in request.resource.data) || request.resource.data.transaction_id is string || request.resource.data.transaction_id == null) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string || request.resource.data.notes == null);
+      
+      // Agencies can update their own investments
+      allow update: if isAuthenticated() && 
+        resource.data.agency_id == request.auth.uid &&
+        request.resource.data.agency_id == resource.data.agency_id &&
+        // Prevent changing createdAt
+        request.resource.data.createdAt == resource.data.createdAt &&
+        // Validate required fields
+        request.resource.data.name is string &&
+        request.resource.data.amount is number &&
+        request.resource.data.amount > 0 &&
+        request.resource.data.amount <= 999999999 &&
+        request.resource.data.date is timestamp &&
+        request.resource.data.payment_method in ['upi', 'cash', 'card'] &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('upi_id' in request.resource.data) || request.resource.data.upi_id is string || request.resource.data.upi_id == null) &&
+        (!('transaction_id' in request.resource.data) || request.resource.data.transaction_id is string || request.resource.data.transaction_id == null) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string || request.resource.data.notes == null);
+      
+      // Agencies can delete their own investments
+      allow delete: if isAuthenticated() && 
+        resource.data.agency_id == request.auth.uid;
     }
     
     // ============================================

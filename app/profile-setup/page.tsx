@@ -121,11 +121,11 @@ export default function ProfileSetupPage() {
           <div className="text-center mb-8">
             <div className="flex items-center justify-center gap-2 mb-4">
                 <Image
-                  src="/images/bg-removed-logo.png"
+                  src="/images/clienova-logo-removebg-preview.png"
                   alt="Clienova"
                   width={400}
                   height={133}
-                  className="h-24 md:h-28 w-auto object-contain"
+                  className="h-16 md:h-20 w-auto object-contain"
                 />
             </div>
             <h1 className="text-3xl font-bold text-gray-900 mb-2">Complete Your Profile</h1>
@@ -135,9 +135,9 @@ export default function ProfileSetupPage() {
           <div className="grid md:grid-cols-2 gap-6">
             <button
               onClick={() => handleTypeSelection("freelancer")}
-              className="p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group"
+              className="p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left group"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-900 via-blue-700 to-blue-400 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
                 <User className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">I&apos;m a Freelancer</h3>
@@ -153,9 +153,9 @@ export default function ProfileSetupPage() {
 
             <button
               onClick={() => handleTypeSelection("agency")}
-              className="p-8 border-2 border-gray-200 rounded-xl hover:border-purple-500 hover:bg-purple-50 transition text-left group"
+              className="p-8 border-2 border-gray-200 rounded-xl hover:border-blue-500 hover:bg-blue-50 transition text-left group"
             >
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-500 to-purple-500 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
+              <div className="w-16 h-16 bg-gradient-to-br from-slate-900 via-blue-700 to-blue-400 rounded-lg flex items-center justify-center mb-4 group-hover:scale-110 transition">
                 <Building2 className="w-8 h-8 text-white" />
               </div>
               <h3 className="text-xl font-bold text-gray-900 mb-2">I&apos;m an Agency</h3>
@@ -181,7 +181,7 @@ export default function ProfileSetupPage() {
         <div className="mb-6">
           <button
             onClick={() => setStep("type")}
-            className="text-purple-600 hover:text-purple-700 font-medium mb-4"
+            className="text-blue-600 hover:text-blue-700 font-medium mb-4"
           >
             ← Back
           </button>
@@ -215,7 +215,7 @@ export default function ProfileSetupPage() {
                 onChange={(e) =>
                   setFreelancerData({ ...freelancerData, phone: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="+91 98765 43210"
               />
             </div>
@@ -230,7 +230,7 @@ export default function ProfileSetupPage() {
                 onChange={(e) =>
                   setFreelancerData({ ...freelancerData, location: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="City, Country"
               />
             </div>
@@ -245,7 +245,7 @@ export default function ProfileSetupPage() {
                   setFreelancerData({ ...freelancerData, bio: e.target.value })
                 }
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="Tell us about yourself, your skills, and experience..."
               />
             </div>
@@ -253,7 +253,7 @@ export default function ProfileSetupPage() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full py-3 bg-gradient-to-r from-slate-900 via-blue-700 to-blue-400 text-white rounded-lg font-semibold hover:shadow-lg hover:shadow-blue-500/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {loading ? "Saving..." : "Complete Profile"}
             </button>
@@ -271,7 +271,7 @@ export default function ProfileSetupPage() {
                   setAgencyData({ ...agencyData, agencyName: e.target.value })
                 }
                 required
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="Your Agency Name"
               />
             </div>
@@ -287,7 +287,7 @@ export default function ProfileSetupPage() {
                   onChange={(e) =>
                     setAgencyData({ ...agencyData, agencyPhone: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                   placeholder="+91 98765 43210"
                 />
               </div>
@@ -302,7 +302,7 @@ export default function ProfileSetupPage() {
                   onChange={(e) =>
                     setAgencyData({ ...agencyData, agencyEmail: e.target.value })
                   }
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                   placeholder="contact@agency.com"
                 />
               </div>
@@ -318,7 +318,7 @@ export default function ProfileSetupPage() {
                 onChange={(e) =>
                   setAgencyData({ ...agencyData, agencyAddress: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="Street, City, State, Country"
               />
             </div>
@@ -333,7 +333,7 @@ export default function ProfileSetupPage() {
                 onChange={(e) =>
                   setAgencyData({ ...agencyData, agencyWebsite: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="https://www.agency.com"
               />
             </div>
@@ -347,7 +347,7 @@ export default function ProfileSetupPage() {
                 onChange={(e) =>
                   setAgencyData({ ...agencyData, numberOfEmployees: e.target.value })
                 }
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
               >
                 <option value="">Select range</option>
                 <option value="1-5">1-5 employees</option>
@@ -369,7 +369,7 @@ export default function ProfileSetupPage() {
                   setAgencyData({ ...agencyData, agencyDescription: e.target.value })
                 }
                 rows={4}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-gray-900"
                 placeholder="Tell us about your agency, services, and expertise..."
               />
             </div>

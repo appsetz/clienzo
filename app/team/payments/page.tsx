@@ -12,19 +12,22 @@ import {
   deleteTeamMemberPayment,
   TeamMemberPayment,
 } from "@/lib/firebase/db";
-import { Plus, X, Save, DollarSign, Calendar, Trash2, Edit2, TrendingUp, Users, PieChart } from "lucide-react";
+import { Plus, X, Save, DollarSign, Calendar, Trash2, Edit2, TrendingUp, Users, PieChart, ArrowLeft } from "lucide-react";
 import { format, startOfMonth, endOfMonth, subMonths } from "date-fns";
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from "recharts";
+import Link from "next/link";
+import { getEmailSettings, queueInvoiceEmailWithPDF } from "@/lib/email/service";
+import type { InvoiceData } from "@/components/InvoiceGenerator";
 
 const COLORS = [
-  "#8B5CF6", // purple
-  "#EC4899", // pink
-  "#F59E0B", // amber
-  "#10B981", // green
-  "#3B82F6", // blue
-  "#EF4444", // red
-  "#06B6D4", // cyan
-  "#F97316", // orange
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#8b5cf6", // purple
+  "#ec4899", // pink
+  "#f59e0b", // amber
+  "#10b981", // green
+  "#f97316", // orange
 ];
 
 export default function TeamPaymentsPage() {
@@ -60,14 +63,10 @@ export default function TeamPaymentsPage() {
       const members = await getTeamMembers(user.uid);
       setTeamMembers(members);
 
-      // Load all payments for the agency (without member filter for faster query)
-      // This ensures we get all payments including newly added ones
       let payments: TeamMemberPayment[] = [];
       try {
-        // First try to get all payments for the agency
         payments = await getTeamMemberPayments(user.uid);
       } catch (err) {
-        // Fallback: load payments per member if the above fails
         console.warn("Loading payments per member as fallback:", err);
         for (const member of members) {
           if (member.id) {
@@ -81,16 +80,13 @@ export default function TeamPaymentsPage() {
         }
       }
       
-      // Remove duplicates (in case fallback was used)
       const uniquePayments = payments.filter((payment, index, self) =>
         index === self.findIndex((p) => p.id === payment.id)
       );
       
-      // Sort payments by date (newest first) to ensure new payments appear at top
       uniquePayments.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
       setAllPayments(uniquePayments);
-      setError(""); // Clear any previous errors
-      console.log(`Loaded ${uniquePayments.length} total payments for ${members.length} team members`);
+      setError("");
     } catch (error: any) {
       console.error("Error loading data:", error);
       setError(error.message || "Error loading data");
@@ -112,20 +108,15 @@ export default function TeamPaymentsPage() {
     setError("");
     setSubmitting(true);
     try {
-      console.log("Submitting payment form:", paymentForm);
-      
       if (editingPayment) {
-        console.log("Updating payment:", editingPayment.id);
         await updateTeamMemberPayment(editingPayment.id!, {
           amount: parseFloat(paymentForm.amount) || 0,
           date: new Date(paymentForm.date),
           notes: paymentForm.notes?.trim() || undefined,
           project_id: paymentForm.project_id?.trim() || undefined,
         });
-        console.log("Payment updated successfully");
       } else {
-        console.log("Creating new payment for member:", paymentForm.team_member_id);
-        const paymentId = await createTeamMemberPayment({
+        await createTeamMemberPayment({
           agency_id: user.uid,
           team_member_id: paymentForm.team_member_id,
           amount: parseFloat(paymentForm.amount) || 0,
@@ -133,10 +124,99 @@ export default function TeamPaymentsPage() {
           notes: paymentForm.notes?.trim() || undefined,
           project_id: paymentForm.project_id?.trim() || undefined,
         });
-        console.log("Payment created successfully with ID:", paymentId);
+
+        // Send payment confirmation email with invoice PDF to team member
+        if (user && userProfile?.userType === "agency" && paymentForm.team_member_id) {
+          try {
+            const teamMember = teamMembers.find((m) => m.id === paymentForm.team_member_id);
+            if (teamMember && teamMember.email) {
+              const settings = await getEmailSettings(user.uid);
+              if (settings && settings.enabled) {
+                const agencyName = userProfile?.agencyName || userProfile?.name || "Your Agency";
+                const paymentAmount = parseFloat(paymentForm.amount);
+                const invoiceNumber = `STF-${teamMember.id?.slice(0, 8).toUpperCase() || 'XXX'}-${Date.now().toString().slice(-6)}`;
+                
+                // Prepare invoice data for staff payment (adapting InvoiceData structure)
+                // Using team member as "client" and creating a minimal project structure
+                const invoiceData: InvoiceData = {
+                  invoiceNumber,
+                  invoiceDate: new Date(paymentForm.date),
+                  client: {
+                    id: teamMember.id || "",
+                    user_id: user.uid,
+                    name: teamMember.name,
+                    email: teamMember.email,
+                    phone: "",
+                    notes: "",
+                    createdAt: teamMember.createdAt,
+                    updatedAt: teamMember.updatedAt,
+                  },
+                  project: {
+                    id: paymentForm.project_id || "staff-payment",
+                    user_id: user.uid,
+                    client_id: teamMember.id || "",
+                    name: paymentForm.project_id ? "Project Payment" : "Staff Payment",
+                    status: "completed" as const,
+                    total_amount: paymentAmount,
+                    deadline: new Date(paymentForm.date),
+                    createdAt: new Date(paymentForm.date),
+                    updatedAt: new Date(paymentForm.date),
+                  },
+                  items: [
+                    {
+                      description: paymentForm.notes || "Payment for services rendered",
+                      amount: paymentAmount,
+                      date: new Date(paymentForm.date),
+                      paymentType: "staff-payment",
+                    },
+                  ],
+                  totalAmount: paymentAmount,
+                  paidAmount: paymentAmount,
+                  pendingAmount: 0,
+                  notes: paymentForm.notes || undefined,
+                };
+
+                const emailSubject = `Payment Sent - Invoice ${invoiceNumber}`;
+                const emailBody = `
+                  <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+                    <h2 style="color: #16a34a;">Payment Sent</h2>
+                    <p>Hi ${teamMember.name},</p>
+                    <p>We've sent your payment of ₹${paymentAmount.toLocaleString()}.</p>
+                    <p>Please find attached the invoice for your records.</p>
+                    <p><strong>Invoice #:</strong> ${invoiceNumber}<br>
+                    <strong>Amount:</strong> ₹${paymentAmount.toLocaleString()}<br>
+                    <strong>Date:</strong> ${new Date(paymentForm.date).toLocaleDateString()}</p>
+                    <p>Thank you for your hard work!</p>
+                    <p>Best regards,<br>${agencyName}</p>
+                    <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 20px 0;">
+                    <p style="font-size: 12px; color: #6b7280;">This is a transactional email from ${agencyName}</p>
+                  </div>
+                `;
+                
+                await queueInvoiceEmailWithPDF(
+                  user.uid,
+                  invoiceData,
+                  userProfile,
+                  teamMember.email,
+                  emailSubject,
+                  emailBody
+                );
+                
+                // Process queue immediately to send email instantly
+                try {
+                  await fetch("/api/email/process-queue", { method: "GET" });
+                } catch (queueError) {
+                  console.error("Error processing email queue:", queueError);
+                }
+              }
+            }
+          } catch (emailError) {
+            console.error("Error sending payment confirmation email with invoice to team member:", emailError);
+            // Don't fail payment creation if email fails
+          }
+        }
       }
       
-      // Close modal first
       setShowModal(false);
       setEditingPayment(null);
       setSelectedMember(null);
@@ -148,26 +228,12 @@ export default function TeamPaymentsPage() {
         project_id: "",
       });
       
-      // Wait a moment for Firestore to propagate
       await new Promise(resolve => setTimeout(resolve, 500));
-      
-      // Reload data immediately - Firestore writes are synchronous
-      console.log("Reloading payment data...");
       await loadData();
-      console.log("Payment data reloaded");
-      
-      // Dispatch custom event to notify dashboard to refresh
       window.dispatchEvent(new CustomEvent("teamPaymentUpdated"));
     } catch (err: any) {
       console.error("Error saving payment:", err);
-      console.error("Full error object:", err);
-      if (err.code) {
-        console.error("Firebase error code:", err.code);
-      }
-      if (err.message) {
-        console.error("Error message:", err.message);
-      }
-      setError(err.message || "Failed to save payment. Please check console for details.");
+      setError(err.message || "Failed to save payment.");
     } finally {
       setSubmitting(false);
     }
@@ -190,16 +256,11 @@ export default function TeamPaymentsPage() {
     if (!confirm("Are you sure you want to delete this payment?")) return;
     try {
       await deleteTeamMemberPayment(paymentId);
-      // Optimistically update UI
       setAllPayments(prev => prev.filter(p => p.id !== paymentId));
-      // Reload to ensure consistency
       await loadData();
-      
-      // Dispatch custom event to notify dashboard to refresh
       window.dispatchEvent(new CustomEvent("teamPaymentUpdated"));
     } catch (err: any) {
       setError(err.message || "Failed to delete payment");
-      // Reload on error to restore correct state
       await loadData();
     }
   };
@@ -213,7 +274,7 @@ export default function TeamPaymentsPage() {
   });
   const thisMonthTotal = thisMonthPayments.reduce((sum, p) => sum + p.amount, 0);
 
-  // Payment distribution by member for pie chart and analytics
+  // Payment distribution by member
   const paymentByMember = teamMembers.map((member) => {
     const memberPayments = allPayments.filter((p) => p.team_member_id === member.id);
     const total = memberPayments.reduce((sum, p) => sum + p.amount, 0);
@@ -232,7 +293,7 @@ export default function TeamPaymentsPage() {
       thisMonthTotal,
       thisMonthCount: thisMonthMemberPayments.length,
     };
-  }).sort((a, b) => b.value - a.value); // Sort by total amount (highest first)
+  }).sort((a, b) => b.value - a.value);
 
   // Monthly trend (last 6 months)
   const monthlyTrend: Array<{ month: string; amount: number; count: number }> = [];
@@ -253,59 +314,65 @@ export default function TeamPaymentsPage() {
   if (userProfile?.userType !== "agency") {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <p className="text-gray-600">Team payments are only available for agencies.</p>
-        </div>
+        <p className="text-sm text-gray-600">Staff payments are only available for agencies.</p>
       </div>
     );
   }
 
   if (loading && allPayments.length === 0) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
-          <p className="text-gray-600">Loading payments...</p>
-        </div>
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900 mb-2">Team Payments</h1>
-          <p className="text-gray-600">Track and manage payments to your team members</p>
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div className="flex items-center gap-3">
+            <Link
+              href="/team"
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Link>
+            <div>
+              <h1 className="text-xl font-semibold text-gray-900">Staff Payments</h1>
+              <p className="text-sm text-gray-500 mt-0.5">Track and manage payments to your team members</p>
+            </div>
+          </div>
+          <button
+            onClick={() => {
+              setShowModal(true);
+              setEditingPayment(null);
+              setSelectedMember(null);
+              setPaymentForm({
+                team_member_id: "",
+                amount: "",
+                date: format(new Date(), "yyyy-MM-dd"),
+                notes: "",
+                project_id: "",
+              });
+            }}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition"
+          >
+            <Plus className="w-4 h-4" />
+            Add Payment
+          </button>
         </div>
-        <button
-          onClick={() => {
-            setShowModal(true);
-            setEditingPayment(null);
-            setSelectedMember(null);
-            setPaymentForm({
-              team_member_id: "",
-              amount: "",
-              date: format(new Date(), "yyyy-MM-dd"),
-              notes: "",
-              project_id: "",
-            });
-          }}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
-        >
-          <Plus className="w-5 h-5" />
-          Add Payment
-        </button>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg text-sm">
           {error}
         </div>
       )}
 
       {loading && allPayments.length > 0 && (
-        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2">
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded-lg flex items-center gap-2 text-sm">
           <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
           <span>Refreshing payments...</span>
         </div>
@@ -313,76 +380,76 @@ export default function TeamPaymentsPage() {
 
       {/* Analytics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-green-600" />
+            </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">Total Paid</p>
+              <p className="text-sm text-gray-500">Total Paid</p>
               <p className="text-2xl font-bold text-gray-900">₹{totalPaid.toLocaleString()}</p>
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-600" />
-            </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-teal-50 rounded-xl flex items-center justify-center">
+              <TrendingUp className="w-5 h-5 text-teal-600" />
+            </div>
             <div>
-              <p className="text-sm text-gray-600 mb-1">This Month</p>
+              <p className="text-sm text-gray-500">This Month</p>
               <p className="text-2xl font-bold text-gray-900">₹{thisMonthTotal.toLocaleString()}</p>
             </div>
-            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-              <TrendingUp className="w-6 h-6 text-purple-600" />
-            </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Payments</p>
-              <p className="text-2xl font-bold text-gray-900">{allPayments.length}</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-blue-50 rounded-xl flex items-center justify-center">
+              <Users className="w-5 h-5 text-blue-600" />
             </div>
-            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-              <Users className="w-6 h-6 text-blue-600" />
+            <div>
+              <p className="text-sm text-gray-500">Total Payments</p>
+              <p className="text-2xl font-bold text-gray-900">{allPayments.length}</p>
             </div>
           </div>
         </div>
       </div>
 
       {/* Member Payment Breakdown */}
-      <div className="bg-white rounded-lg shadow p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <Users className="w-5 h-5" />
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+          <Users className="w-4 h-4 text-teal-600" />
           Payment Breakdown by Member
         </h3>
         {paymentByMember.length === 0 ? (
           <div className="text-center py-8">
-            <p className="text-gray-600">No payments recorded for any team member yet</p>
+            <p className="text-sm text-gray-500">No payments recorded for any team member yet</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             {paymentByMember.map((member, index) => (
-              <div key={member.id || index} className="border border-gray-200 rounded-lg p-4 hover:shadow-md transition">
+              <div key={member.id || index} className="border border-gray-100 rounded-xl p-4 hover:shadow-md hover:border-gray-200 transition">
                 <div className="flex items-center gap-3 mb-3">
-                  <div className="h-12 w-12 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-lg">
+                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white font-semibold">
                     {member.name.charAt(0).toUpperCase()}
                   </div>
-                  <div className="flex-1">
-                    <h4 className="font-semibold text-gray-900">{member.name}</h4>
-                    <p className="text-sm text-gray-500">{member.role}</p>
+                  <div className="flex-1 min-w-0">
+                    <h4 className="text-sm font-semibold text-gray-900 truncate">{member.name}</h4>
+                    <p className="text-xs text-gray-500 truncate">{member.role}</p>
                   </div>
                 </div>
-                <div className="space-y-2 pt-3 border-t border-gray-100">
+                <div className="space-y-1.5 pt-3 border-t border-gray-100">
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Paid</span>
-                    <span className="text-lg font-bold text-gray-900">₹{member.value.toLocaleString()}</span>
+                    <span className="text-xs text-gray-500">Total Paid</span>
+                    <span className="text-sm font-bold text-gray-900">₹{member.value.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">This Month</span>
-                    <span className="text-sm font-semibold text-purple-600">₹{member.thisMonthTotal.toLocaleString()}</span>
+                    <span className="text-xs text-gray-500">This Month</span>
+                    <span className="text-xs font-semibold text-teal-600">₹{member.thisMonthTotal.toLocaleString()}</span>
                   </div>
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-gray-600">Total Payments</span>
-                    <span className="text-sm font-medium text-gray-700">{member.count}</span>
+                    <span className="text-xs text-gray-500">Payments</span>
+                    <span className="text-xs font-medium text-gray-700">{member.count}</span>
                   </div>
                 </div>
               </div>
@@ -392,15 +459,15 @@ export default function TeamPaymentsPage() {
       </div>
 
       {/* Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Pie Chart - Payment Distribution */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        {/* Pie Chart */}
         {paymentByMember.filter((item) => item.value > 0).length > 0 && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <PieChart className="w-5 h-5" />
-              Payment Distribution by Member
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+              <PieChart className="w-4 h-4 text-teal-600" />
+              Payment Distribution
             </h3>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={280}>
               <RechartsPieChart>
                 <Pie
                   data={paymentByMember.filter((item) => item.value > 0)}
@@ -408,7 +475,7 @@ export default function TeamPaymentsPage() {
                   cy="50%"
                   labelLine={false}
                   label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
-                  outerRadius={100}
+                  outerRadius={90}
                   fill="#8884d8"
                   dataKey="value"
                 >
@@ -424,28 +491,28 @@ export default function TeamPaymentsPage() {
         )}
 
         {/* Monthly Trend */}
-        <div className="bg-white rounded-lg shadow p-6">
-          <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-            <TrendingUp className="w-5 h-5" />
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <h3 className="text-base font-semibold text-gray-900 mb-4 flex items-center gap-2">
+            <TrendingUp className="w-4 h-4 text-teal-600" />
             Monthly Payment Trend
           </h3>
-          <div className="space-y-4">
+          <div className="space-y-3">
             {monthlyTrend.map((month, index) => {
               const maxAmount = Math.max(...monthlyTrend.map((m) => m.amount), 1);
               const percentage = (month.amount / maxAmount) * 100;
               return (
                 <div key={index} className="space-y-1">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-700 font-medium">{month.month}</span>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-600 font-medium">{month.month}</span>
                     <span className="text-gray-900 font-semibold">₹{month.amount.toLocaleString()}</span>
                   </div>
-                  <div className="w-full bg-gray-200 rounded-full h-2">
+                  <div className="w-full bg-gray-100 rounded-full h-1.5">
                     <div
-                      className="bg-gradient-to-r from-purple-600 to-pink-600 h-2 rounded-full transition-all"
+                      className="bg-gradient-to-r from-teal-500 to-cyan-500 h-1.5 rounded-full transition-all"
                       style={{ width: `${percentage}%` }}
                     />
                   </div>
-                  <p className="text-xs text-gray-500">{month.count} payment{month.count !== 1 ? "s" : ""}</p>
+                  <p className="text-[10px] text-gray-400">{month.count} payment{month.count !== 1 ? "s" : ""}</p>
                 </div>
               );
             })}
@@ -453,88 +520,88 @@ export default function TeamPaymentsPage() {
         </div>
       </div>
 
-      {/* Payments List by Member */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="px-6 py-4 border-b border-gray-200">
-          <h3 className="text-lg font-semibold text-gray-900">All Payments</h3>
+      {/* Payments List */}
+      <div className="bg-white rounded-2xl border border-gray-100 overflow-hidden">
+        <div className="px-5 py-4 border-b border-gray-100">
+          <h3 className="text-base font-semibold text-gray-900">All Payments</h3>
         </div>
         <div className="overflow-x-auto">
           {allPayments.length === 0 ? (
-            <div className="text-center py-12">
-              <DollarSign className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 mb-2">No payments yet</h3>
-              <p className="text-gray-600 mb-6">Add your first payment to get started</p>
+            <div className="text-center py-10">
+              <DollarSign className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-base font-semibold text-gray-900 mb-2">No payments yet</h3>
+              <p className="text-sm text-gray-500 mb-4">Add your first payment to get started</p>
               <button
                 onClick={() => setShowModal(true)}
-                className="inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition"
               >
-                <Plus className="w-5 h-5" />
+                <Plus className="w-4 h-4" />
                 Add First Payment
               </button>
             </div>
           ) : (
             <table className="w-full">
-              <thead className="bg-gray-50">
+              <thead className="bg-gray-50 border-b border-gray-100">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Member
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Amount
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Date
                   </th>
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Notes
                   </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-5 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white divide-y divide-gray-200">
+              <tbody className="bg-white divide-y divide-gray-100">
                 {allPayments
                   .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
                   .map((payment) => {
                     const member = teamMembers.find((m) => m.id === payment.team_member_id);
                     return (
                       <tr key={payment.id} className="hover:bg-gray-50">
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <div className="flex items-center">
-                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold">
+                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-teal-500 to-cyan-500 flex items-center justify-center text-white text-xs font-semibold">
                               {member?.name.charAt(0).toUpperCase() || "?"}
                             </div>
-                            <div className="ml-4">
+                            <div className="ml-3">
                               <div className="text-sm font-medium text-gray-900">{member?.name || "Unknown"}</div>
-                              <div className="text-sm text-gray-500">{member?.role || ""}</div>
+                              <div className="text-xs text-gray-500">{member?.role || ""}</div>
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-5 py-4 whitespace-nowrap">
                           <span className="text-sm font-semibold text-gray-900">₹{payment.amount.toLocaleString()}</span>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        <td className="px-5 py-4 whitespace-nowrap text-xs text-gray-500">
                           {format(payment.date, "MMM dd, yyyy")}
                         </td>
-                        <td className="px-6 py-4 text-sm text-gray-500">
+                        <td className="px-5 py-4 text-xs text-gray-500 max-w-[150px] truncate">
                           {payment.notes || "-"}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end gap-2">
+                        <td className="px-5 py-4 whitespace-nowrap text-right">
+                          <div className="flex items-center justify-end gap-1">
                             <button
                               onClick={() => handleEdit(payment)}
-                              className="p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
+                              className="p-1.5 text-gray-500 hover:text-teal-600 hover:bg-gray-100 rounded transition"
                               title="Edit Payment"
                             >
-                              <Edit2 className="w-4 h-4" />
+                              <Edit2 className="w-3.5 h-3.5" />
                             </button>
                             <button
                               onClick={() => handleDelete(payment.id!)}
-                              className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition"
+                              className="p-1.5 text-gray-500 hover:text-red-600 hover:bg-red-50 rounded transition"
                               title="Delete Payment"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </div>
                         </td>
@@ -549,8 +616,8 @@ export default function TeamPaymentsPage() {
 
       {/* Add/Edit Payment Modal */}
       {showModal && (
-        <div className="fixed inset-0 bg-gray-900 bg-opacity-75 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-2xl shadow-xl max-w-md w-full p-5 relative">
             <button
               onClick={() => {
                 setShowModal(false);
@@ -569,13 +636,13 @@ export default function TeamPaymentsPage() {
               <X className="w-5 h-5" />
             </button>
 
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">
+            <h2 className="text-lg font-semibold text-gray-900 mb-5">
               {editingPayment ? "Edit Payment" : "Add Payment"}
             </h2>
 
             <form onSubmit={handleSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Team Member *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Team Member *</label>
                 <select
                   value={paymentForm.team_member_id}
                   onChange={(e) => {
@@ -584,7 +651,7 @@ export default function TeamPaymentsPage() {
                     setPaymentForm({ ...paymentForm, team_member_id: e.target.value });
                   }}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 >
                   <option value="">Select a member</option>
                   {teamMembers.map((member) => (
@@ -596,36 +663,36 @@ export default function TeamPaymentsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Amount (₹) *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Amount (₹) *</label>
                 <input
                   type="number"
                   step="0.01"
                   value={paymentForm.amount}
                   onChange={(e) => setPaymentForm({ ...paymentForm, amount: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                   placeholder="0.00"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Date *</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Date *</label>
                 <input
                   type="date"
                   value={paymentForm.date}
                   onChange={(e) => setPaymentForm({ ...paymentForm, date: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Notes (Optional)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-1.5">Notes (Optional)</label>
                 <textarea
                   value={paymentForm.notes}
                   onChange={(e) => setPaymentForm({ ...paymentForm, notes: e.target.value })}
-                  rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  rows={2}
+                  className="w-full px-3 py-2.5 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                   placeholder="Payment notes..."
                 />
               </div>
@@ -647,14 +714,14 @@ export default function TeamPaymentsPage() {
                       project_id: "",
                     });
                   }}
-                  className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-semibold hover:bg-gray-50 transition"
+                  className="flex-1 px-3 py-2.5 border border-gray-200 text-gray-700 rounded-lg text-sm font-medium hover:bg-gray-50 transition"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={submitting}
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="flex-1 px-3 py-2.5 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                   {submitting ? (
                     <>
@@ -676,4 +743,3 @@ export default function TeamPaymentsPage() {
     </div>
   );
 }
-

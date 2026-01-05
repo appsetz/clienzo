@@ -4,7 +4,7 @@ import { useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
-import { LayoutDashboard, Users, FolderKanban, CreditCard, User, X, Menu, UserPlus } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, CreditCard, User, X, Menu, UserPlus, Mail, TrendingUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const navItems = [
@@ -12,7 +12,9 @@ const navItems = [
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/payments", label: "Payments", icon: CreditCard },
-  { href: "/team", label: "Team", icon: UserPlus, agencyOnly: true },
+  { href: "/team", label: "My Staff", icon: UserPlus, agencyOnly: true },
+  { href: "/email-automation", label: "Email Automation", icon: Mail, agencyOnly: true },
+  { href: "/investments", label: "Investments", icon: TrendingUp, agencyOnly: true },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
@@ -47,11 +49,11 @@ export default function MobileMenu() {
       >
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <Image
-            src="/images/bg-removed-logo.png"
+            src="/images/clienova-logo-removebg-preview.png"
             alt="Clienova"
             width={250}
             height={83}
-            className="h-20 w-auto object-contain"
+            className="h-16 w-auto object-contain"
           />
           <button
             onClick={() => setIsOpen(false)}

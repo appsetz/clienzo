@@ -4,14 +4,14 @@ import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Legend, T
 import { PieChart } from "lucide-react";
 
 const COLORS = [
-  "#8B5CF6", // purple
-  "#EC4899", // pink
-  "#F59E0B", // amber
-  "#10B981", // green
-  "#3B82F6", // blue
-  "#EF4444", // red
-  "#06B6D4", // cyan
-  "#F97316", // orange
+  "#14b8a6", // teal
+  "#06b6d4", // cyan
+  "#3b82f6", // blue
+  "#10b981", // emerald
+  "#8b5cf6", // violet
+  "#f59e0b", // amber
+  "#ef4444", // red
+  "#f97316", // orange
 ];
 
 interface ArcChartProps {
@@ -29,13 +29,13 @@ export default function ArcChart({
   height = 300,
   showLegend = true,
   innerRadius = 60,
-  outerRadius = 120,
+  outerRadius = 100,
 }: ArcChartProps) {
   if (!data || data.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <PieChart className="w-5 h-5" />
+          <PieChart className="w-5 h-5 text-teal-600" />
           {title}
         </h3>
         <div className="flex items-center justify-center h-64 text-gray-500">
@@ -50,9 +50,9 @@ export default function ArcChart({
 
   if (filteredData.length === 0) {
     return (
-      <div className="bg-white rounded-lg shadow p-6">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
         <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-          <PieChart className="w-5 h-5" />
+          <PieChart className="w-5 h-5 text-teal-600" />
           {title}
         </h3>
         <div className="flex items-center justify-center h-64 text-gray-500">
@@ -63,9 +63,9 @@ export default function ArcChart({
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
+    <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 h-full">
       <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-        <PieChart className="w-5 h-5" />
+        <PieChart className="w-5 h-5 text-teal-600" />
         {title}
       </h3>
       <ResponsiveContainer width="100%" height={height}>
@@ -76,25 +76,31 @@ export default function ArcChart({
             cy="50%"
             innerRadius={innerRadius}
             outerRadius={outerRadius}
-            paddingAngle={2}
+            paddingAngle={3}
             dataKey="value"
             label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
             labelLine={false}
           >
             {filteredData.map((entry, index) => (
-              <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+              <Cell 
+                key={`cell-${index}`} 
+                fill={COLORS[index % COLORS.length]} 
+                stroke="white"
+                strokeWidth={2}
+              />
             ))}
           </Pie>
           <Tooltip
             formatter={(value: number | undefined, name: string | undefined, props: any) => [
-              value ? `₹${value.toLocaleString()}` : '₹0',
+              value !== undefined ? (typeof value === 'number' && value > 1000 ? `₹${value.toLocaleString()}` : value) : '0',
               props.payload?.name || name || '',
             ]}
             contentStyle={{
               backgroundColor: "white",
-              border: "1px solid #e5e7eb",
-              borderRadius: "8px",
-              padding: "8px",
+              border: "none",
+              borderRadius: "12px",
+              padding: "12px",
+              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             }}
           />
           {showLegend && (
@@ -102,8 +108,8 @@ export default function ArcChart({
               verticalAlign="bottom"
               height={36}
               formatter={(value, entry: any) => (
-                <span style={{ color: entry.color }}>
-                  {value}: ₹{entry.payload.value.toLocaleString()}
+                <span className="text-sm text-gray-700">
+                  {value}: {entry.payload.value}
                 </span>
               )}
             />
@@ -111,13 +117,12 @@ export default function ArcChart({
         </RechartsPieChart>
       </ResponsiveContainer>
       {total > 0 && (
-        <div className="mt-4 text-center">
-          <p className="text-sm text-gray-600">
-            Total: <span className="font-semibold text-gray-900">₹{total.toLocaleString()}</span>
+        <div className="mt-4 text-center border-t border-gray-100 pt-4">
+          <p className="text-sm text-gray-500">
+            Total: <span className="font-semibold text-gray-900">{total}</span> items
           </p>
         </div>
       )}
     </div>
   );
 }
-

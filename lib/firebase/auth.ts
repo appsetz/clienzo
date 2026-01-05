@@ -42,6 +42,7 @@ export interface UserProfile {
   businessAddress?: string;
   businessType?: string; // e.g., "Service", "Retail", "Restaurant"
   feedback_given?: boolean; // Track if user has submitted feedback
+  feedback_skipped?: boolean; // Track if user has skipped feedback
 }
 
 export const signUp = async (

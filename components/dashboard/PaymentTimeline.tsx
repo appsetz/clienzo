@@ -9,9 +9,10 @@ interface PaymentTimelineProps {
   payments: Payment[];
   projects: Project[];
   limit?: number;
+  title?: string;
 }
 
-export default function PaymentTimeline({ payments, projects, limit = 10 }: PaymentTimelineProps) {
+export default function PaymentTimeline({ payments, projects, limit = 10, title = "Payment History" }: PaymentTimelineProps) {
   const sortedPayments = [...payments]
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
     .slice(0, limit);
@@ -51,7 +52,7 @@ export default function PaymentTimeline({ payments, projects, limit = 10 }: Paym
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-2">
           <Calendar className="w-5 h-5 text-purple-600" />
-          <h2 className="text-xl font-semibold text-gray-900">Payment History</h2>
+          <h2 className="text-xl font-semibold text-gray-900">{title}</h2>
         </div>
         <Link
           href="/payments"

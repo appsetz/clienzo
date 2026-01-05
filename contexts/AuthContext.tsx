@@ -1,7 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
-import { User, onAuthStateChanged } from "firebase/auth";
+import { User, onAuthStateChanged, signOut } from "firebase/auth";
 import { auth, getUserProfile, UserProfile } from "@/lib/firebase/auth";
 
 interface AuthContextType {
@@ -9,6 +9,7 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   refreshProfile: () => Promise<void>;
+  logout: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -16,6 +17,7 @@ const AuthContext = createContext<AuthContextType>({
   userProfile: null,
   loading: true,
   refreshProfile: async () => {},
+  logout: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -36,6 +38,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     } else {
       setUserProfile(null);
+    }
+  };
+
+  const logout = async () => {
+    try {
+      await signOut(auth);
+      setUser(null);
+      setUserProfile(null);
+    } catch (error) {
+      console.error("Error signing out:", error);
+      throw error;
     }
   };
 
@@ -88,7 +101,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, refreshProfile }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, refreshProfile, logout }}>
       {children}
     </AuthContext.Provider>
   );

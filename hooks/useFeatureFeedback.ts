@@ -5,16 +5,17 @@ import { useAuth } from "@/contexts/AuthContext";
 import { getClients, getProjects, getPayments, getTeamMembers } from "@/lib/firebase/db";
 
 export function useFeatureFeedback() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, refreshProfile } = useAuth();
   const [showPrompt, setShowPrompt] = useState(false);
   const [checkingFeatures, setCheckingFeatures] = useState(true);
 
-  // Check if user has already given feedback
+  // Check if user has already given feedback or skipped it
   const hasGivenFeedback = userProfile?.feedback_given === true;
+  const hasSkippedFeedback = userProfile?.feedback_skipped === true;
 
   // Track feature usage
   const checkFeatureUsage = useCallback(async () => {
-    if (!user || hasGivenFeedback) {
+    if (!user || hasGivenFeedback || hasSkippedFeedback) {
       setCheckingFeatures(false);
       return;
     }
@@ -45,9 +46,9 @@ export function useFeatureFeedback() {
 
       // Show prompt if:
       // 1. All features have been used (first-time completion)
-      // 2. User has used at least one feature and hasn't given feedback (returning user)
+      // 2. User has used at least one feature and hasn't given or skipped feedback (returning user)
       const shouldShowPrompt = allFeaturesUsed || 
-        (!hasGivenFeedback && (clients.length > 0 || projects.length > 0 || payments.length > 0));
+        (!hasGivenFeedback && !hasSkippedFeedback && (clients.length > 0 || projects.length > 0 || payments.length > 0));
       
       if (shouldShowPrompt) {
         // Small delay to ensure page is loaded
@@ -60,26 +61,42 @@ export function useFeatureFeedback() {
     } finally {
       setCheckingFeatures(false);
     }
-  }, [user, userProfile, hasGivenFeedback]);
+  }, [user, userProfile, hasGivenFeedback, hasSkippedFeedback]);
 
   useEffect(() => {
-    if (user && userProfile && !hasGivenFeedback) {
+    if (user && userProfile && !hasGivenFeedback && !hasSkippedFeedback) {
       checkFeatureUsage();
     } else {
       setCheckingFeatures(false);
     }
-  }, [user, userProfile, hasGivenFeedback, checkFeatureUsage]);
+  }, [user, userProfile, hasGivenFeedback, hasSkippedFeedback, checkFeatureUsage]);
 
   const handleFeedbackSubmitted = useCallback(async () => {
     setShowPrompt(false);
     // The feedback_given flag will be updated by ReviewPrompt component
   }, []);
 
-  // Don't allow closing without submitting - make it persistent
-  const handleClose = () => {
-    // Do nothing - feedback is required
-    // User must submit feedback to close
-  };
+  // Allow users to skip feedback
+  const handleClose = useCallback(async () => {
+    if (!user) return;
+    
+    setShowPrompt(false);
+    
+    // Mark feedback as skipped in user profile so they don't see it again
+    try {
+      const { doc, updateDoc } = await import("firebase/firestore");
+      const { db } = await import("@/lib/firebase/config");
+      await updateDoc(doc(db, "users", user.uid), {
+        feedback_skipped: true,
+      });
+      
+      // Refresh profile to update context
+      await refreshProfile();
+    } catch (error) {
+      console.error("Error marking feedback as skipped:", error);
+      // Continue even if marking fails - user can still skip
+    }
+  }, [user, refreshProfile]);
 
   return { 
     showPrompt, 

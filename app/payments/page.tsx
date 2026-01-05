@@ -4,12 +4,12 @@ import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getPayments, createPayment, deletePayment, Payment } from "@/lib/firebase/db";
 import { getProjects, Project } from "@/lib/firebase/db";
-import { Plus, Trash2, DollarSign, Calendar, FileText } from "lucide-react";
+import { Plus, Trash2, DollarSign, Calendar, FileText, Download } from "lucide-react";
 import { format } from "date-fns";
 import InvoiceGenerator from "@/components/InvoiceGenerator";
 import { getClient } from "@/lib/firebase/db";
-import PageTour from "@/components/PageTour";
-import { getPaymentsTourSteps } from "@/lib/tours";
+import { triggerEmailEvent } from "@/lib/email/service";
+import { exportToCSV } from "@/lib/utils/exportData";
 
 type PaymentFormData = {
   project_id: string;
@@ -17,6 +17,9 @@ type PaymentFormData = {
   date: string;
   notes: string;
   payment_type: "" | "advance" | "partial" | "final";
+  payment_method: "upi" | "cash" | "bank_account";
+  upi_id: string;
+  bank_account: string;
 };
 
 export default function PaymentsPage() {
@@ -31,10 +34,14 @@ export default function PaymentsPage() {
     date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     payment_type: "",
+    payment_method: "upi",
+    upi_id: "",
+    bank_account: "",
   });
   const [error, setError] = useState("");
   const [showInvoice, setShowInvoice] = useState(false);
   const [invoiceData, setInvoiceData] = useState<any>(null);
+  const [submitting, setSubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!user) return;
@@ -85,9 +92,10 @@ export default function PaymentsPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) return;
+    if (!user || submitting) return;
 
     setError("");
+    setSubmitting(true);
 
     try {
       await createPayment({
@@ -98,6 +106,112 @@ export default function PaymentsPage() {
         notes: formData.notes || undefined,
         payment_type: formData.payment_type || undefined,
       });
+
+      // Trigger email events for agencies
+      if (user && userProfile?.userType === "agency" && formData.project_id) {
+        try {
+          const project = projects.find((p) => p.id === formData.project_id);
+          if (project) {
+            const client = await getClient(project.client_id);
+            if (client && client.email) {
+              // Calculate invoice details
+              const allProjectPayments = payments.filter((p) => p.project_id === formData.project_id);
+              const totalPaid = allProjectPayments.reduce((sum, p) => sum + p.amount, 0) + parseFloat(formData.amount);
+              const pending = project.total_amount - totalPaid;
+              const invoiceNumber = `INV-${project.id?.slice(0, 8).toUpperCase() || 'XXX'}-${Date.now().toString().slice(-6)}`;
+              
+              // Prepare invoice data for PDF generation
+              const invoiceData = {
+                invoiceNumber,
+                invoiceDate: new Date(formData.date),
+                client,
+                project,
+                items: [
+                  {
+                    description: `Payment for: ${project.name}`,
+                    amount: parseFloat(formData.amount),
+                    date: new Date(formData.date),
+                    paymentType: formData.payment_type || "payment",
+                  },
+                ],
+                totalAmount: project.total_amount,
+                paidAmount: totalPaid,
+                pendingAmount: pending,
+                notes: formData.notes || undefined,
+              };
+
+              // Send payment receipt email first
+              try {
+                await triggerEmailEvent(
+                  user.uid,
+                  "PAYMENT_RECEIVED",
+                  {
+                    agency_name: userProfile?.agencyName || userProfile?.name || "Your Agency",
+                    client_name: client.name,
+                    payment_amount: parseFloat(formData.amount).toLocaleString(),
+                    invoice_number: invoiceNumber,
+                  },
+                  client.email
+                );
+              } catch (receiptError) {
+                console.error("Error sending payment receipt email:", receiptError);
+              }
+
+              // Send invoice email with PDF attachment (using default "classic" template)
+              try {
+                const response = await fetch("/api/invoice/send-pdf-email", {
+                  method: "POST",
+                  headers: {
+                    "Content-Type": "application/json",
+                  },
+                  body: JSON.stringify({
+                    userId: user.uid,
+                    invoiceData,
+                    userProfile,
+                    recipientEmail: client.email,
+                  }),
+                });
+
+                if (!response.ok) {
+                  const errorData = await response.json();
+                  console.error("Failed to send invoice PDF email:", errorData.error);
+                }
+              } catch (pdfError) {
+                console.error("Error sending invoice PDF email:", pdfError);
+                // Fallback to regular invoice email if PDF fails
+                try {
+                  await triggerEmailEvent(
+                    user.uid,
+                    "INVOICE_CREATED",
+                    {
+                      agency_name: userProfile?.agencyName || userProfile?.name || "Your Agency",
+                      client_name: client.name,
+                      project_name: project.name,
+                      invoice_number: invoiceNumber,
+                      invoice_amount: project.total_amount.toLocaleString(),
+                      due_date: format(new Date(formData.date), "MMM dd, yyyy"),
+                    },
+                    client.email
+                  );
+                } catch (invoiceError) {
+                  console.error("Error sending invoice email:", invoiceError);
+                }
+              }
+
+              // Process queue immediately to send emails instantly
+              try {
+                await fetch("/api/email/process-queue", { method: "GET" });
+              } catch (queueError) {
+                console.error("Error processing email queue:", queueError);
+              }
+            }
+          }
+        } catch (emailError) {
+          console.error("Error triggering email event:", emailError);
+          // Don't fail payment creation if email fails
+        }
+      }
+
       setShowModal(false);
       setFormData({
         project_id: "",
@@ -105,10 +219,15 @@ export default function PaymentsPage() {
         date: format(new Date(), "yyyy-MM-dd"),
         notes: "",
         payment_type: "",
+        payment_method: "upi",
+        upi_id: "",
+        bank_account: "",
       });
       loadData();
     } catch (error: any) {
       setError(error.message || "Failed to save payment");
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -120,6 +239,29 @@ export default function PaymentsPage() {
     } catch (error) {
       console.error("Error deleting payment:", error);
     }
+  };
+
+  const handleExport = async () => {
+    // Fetch clients for payment export
+    const { getClients } = await import("@/lib/firebase/db");
+    const allClients = user ? await getClients(user.uid) : [];
+    
+    const exportData = payments.map((payment) => {
+      const paymentProject = projects.find((p) => p.id === payment.project_id);
+      const projectClient = paymentProject ? allClients.find((c) => c.id === paymentProject.client_id) : null;
+      
+      return {
+        "Payment Date": format(new Date(payment.date), "MMM dd, yyyy"),
+        "Amount (₹)": payment.amount.toLocaleString(),
+        "Project Name": paymentProject?.name || "",
+        "Client Name": projectClient?.name || "",
+        "Payment Type": payment.payment_type || "",
+        "Notes": payment.notes || "",
+        "Created Date": payment.createdAt ? format(new Date(payment.createdAt), "MMM dd, yyyy") : "",
+      };
+    });
+    
+    exportToCSV(exportData, "payments");
   };
 
   const getProjectName = (projectId: string) => {
@@ -165,6 +307,27 @@ export default function PaymentsPage() {
         notes: payment.notes,
       });
       setShowInvoice(true);
+
+      // Trigger invoice created event when invoice is generated (agency only)
+      if (user && userProfile?.userType === "agency" && client.email) {
+        try {
+          await triggerEmailEvent(
+            user.uid,
+            "INVOICE_CREATED",
+            {
+              agency_name: userProfile?.agencyName || userProfile?.name || "Your Agency",
+              client_name: client.name,
+              project_name: project.name,
+              invoice_number: invoiceNumber,
+              invoice_amount: project.total_amount.toLocaleString(),
+              due_date: format(new Date(payment.date), "MMM dd, yyyy"),
+            },
+            client.email
+          );
+        } catch (emailError) {
+          console.error("Error triggering email event:", emailError);
+        }
+      }
     } catch (error) {
       console.error("Error generating invoice:", error);
       alert("Failed to generate invoice. Please try again.");
@@ -192,36 +355,44 @@ export default function PaymentsPage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary-600"></div>
+        <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-teal-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6 w-full max-w-full overflow-x-hidden">
-      <PageTour pageId="payments" steps={getPaymentsTourSteps()} />
-      
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4" data-tour="payments-header">
-        <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600 mt-1">Track all your payments</p>
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
+        <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+          <div>
+            <h1 className="text-xl font-semibold text-gray-900">Payments</h1>
+            <p className="text-sm text-gray-500 mt-0.5">Track all your payments</p>
+          </div>
+          <button
+            onClick={handleExport}
+            disabled={payments.length === 0}
+            className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            Export CSV
+          </button>
+          <button
+            onClick={() => setShowModal(true)}
+            disabled={projects.length === 0}
+            className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <Plus className="w-4 h-4" />
+            Add Payment
+          </button>
         </div>
-        <button
-          data-tour="payments-add-button"
-          onClick={() => setShowModal(true)}
-          disabled={projects.length === 0}
-          className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <Plus className="w-5 h-5" />
-          Add Payment
-        </button>
       </div>
 
       {projects.length === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+        <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-sm">
           <p className="text-blue-800">
             You need to create projects first.{" "}
-            <a href="/projects" className="font-semibold underline">
+            <a href="/projects" className="font-medium underline">
               Create a project
             </a>
           </p>
@@ -229,38 +400,38 @@ export default function PaymentsPage() {
       )}
 
       {/* Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Total Paid</p>
-              <p className="text-2xl font-bold text-gray-900">₹{totalPaid.toLocaleString()}</p>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-green-50 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-green-600" />
             </div>
-            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-green-600" />
+            <div>
+              <p className="text-sm text-gray-500">Total Paid</p>
+              <p className="text-2xl font-bold text-gray-900">₹{totalPaid.toLocaleString()}</p>
             </div>
           </div>
         </div>
-        <div className="bg-white rounded-lg shadow p-6">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-600 mb-1">Pending Payments</p>
-              <p className="text-2xl font-bold text-gray-900">₹{totalPending.toLocaleString()}</p>
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 bg-orange-50 rounded-xl flex items-center justify-center">
+              <DollarSign className="w-5 h-5 text-orange-600" />
             </div>
-            <div className="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-              <DollarSign className="w-6 h-6 text-orange-600" />
+            <div>
+              <p className="text-sm text-gray-500">Pending Payments</p>
+              <p className="text-2xl font-bold text-gray-900">₹{totalPending.toLocaleString()}</p>
             </div>
           </div>
         </div>
         {userProfile?.plan !== "free" && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm text-gray-600 mb-1">This Month</p>
-                <p className="text-2xl font-bold text-gray-900">₹{thisMonthTotal.toLocaleString()}</p>
+          <div className="bg-white rounded-2xl border border-gray-100 p-5">
+            <div className="flex items-center gap-3">
+              <div className="w-11 h-11 bg-teal-50 rounded-xl flex items-center justify-center">
+                <Calendar className="w-5 h-5 text-teal-600" />
               </div>
-              <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
-                <Calendar className="w-6 h-6 text-purple-600" />
+              <div>
+                <p className="text-sm text-gray-500">This Month</p>
+                <p className="text-2xl font-bold text-gray-900">₹{thisMonthTotal.toLocaleString()}</p>
               </div>
             </div>
           </div>
@@ -269,16 +440,16 @@ export default function PaymentsPage() {
 
       {/* Pending Payments */}
       {totalPending > 0 && (
-        <div className="bg-white rounded-lg shadow p-6">
-          <h2 className="text-xl font-semibold text-gray-900 mb-4">Pending Payments</h2>
-          <div className="space-y-3">
+        <div className="bg-white rounded-2xl border border-gray-100 p-5">
+          <h2 className="text-base font-semibold text-gray-900 mb-4">Pending Payments</h2>
+          <div className="space-y-2">
             {projectPayments
               .filter((p) => p.pending > 0)
               .map(({ project, paid, pending }) => (
-                <div key={project.id} className="flex items-center justify-between p-4 bg-orange-50 rounded-lg border border-orange-200">
+                <div key={project.id} className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
                   <div>
-                    <p className="font-medium text-gray-900">{project.name}</p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm font-medium text-gray-900">{project.name}</p>
+                    <p className="text-xs text-gray-600">
                       Paid: ₹{paid.toLocaleString()} / Total: ₹{project.total_amount.toLocaleString()}
                     </p>
                   </div>
@@ -293,7 +464,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Payment History */}
-      <div className="bg-white rounded-lg shadow p-6" data-tour="payments-list">
+      <div className="bg-white rounded-2xl border border-gray-100 p-5">
         <h2 className="text-xl font-semibold text-gray-900 mb-4">Payment History</h2>
         {payments.length === 0 ? (
           <div className="text-center py-12">
@@ -302,7 +473,7 @@ export default function PaymentsPage() {
             <button
               onClick={() => setShowModal(true)}
               disabled={projects.length === 0}
-              className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+              className="px-6 py-3 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Add Your First Payment
             </button>
@@ -328,25 +499,32 @@ export default function PaymentsPage() {
                     </td>
                     <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-900">{getProjectName(payment.project_id)}</td>
                     <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm hidden sm:table-cell">
-                      {payment.payment_type ? (
-                        <span
-                          className={`px-2 py-1 rounded text-xs font-medium ${
-                            payment.payment_type === "advance"
-                              ? "bg-blue-100 text-blue-800"
+                      <div className="space-y-1">
+                        {payment.payment_type && (
+                          <span
+                            className={`px-2 py-1 rounded text-xs font-medium block ${
+                              payment.payment_type === "advance"
+                                ? "bg-blue-100 text-blue-800"
+                                : payment.payment_type === "partial"
+                                ? "bg-yellow-100 text-yellow-800"
+                                : "bg-green-100 text-green-800"
+                            }`}
+                          >
+                            {payment.payment_type === "advance"
+                              ? "Advance"
                               : payment.payment_type === "partial"
-                              ? "bg-yellow-100 text-yellow-800"
-                              : "bg-green-100 text-green-800"
-                          }`}
-                        >
-                          {payment.payment_type === "advance"
-                            ? "Advance"
-                            : payment.payment_type === "partial"
-                            ? "Partial"
-                            : "Final"}
-                        </span>
-                      ) : (
-                        <span className="text-gray-400">-</span>
-                      )}
+                              ? "Partial"
+                              : "Final"}
+                          </span>
+                        )}
+                        {payment.payment_method && (
+                          <span className="text-xs text-gray-600 block">
+                            {payment.payment_method === "upi" && payment.upi_id ? `UPI: ${payment.upi_id}` : 
+                             payment.payment_method === "bank_account" && payment.bank_account ? `Bank: ${payment.bank_account}` :
+                             payment.payment_method === "cash" ? "Cash" : payment.payment_method}
+                          </span>
+                        )}
+                      </div>
                     </td>
                     <td className="py-3 px-2 sm:px-4 text-xs sm:text-sm text-gray-900 text-right font-semibold whitespace-nowrap">
                       ₹{payment.amount.toLocaleString()}
@@ -355,7 +533,6 @@ export default function PaymentsPage() {
                     <td className="py-3 px-2 sm:px-4 text-right">
                       <div className="flex items-center justify-end gap-1">
                         <button
-                          data-tour="payments-invoice-button"
                           onClick={() => handleGenerateInvoice(payment)}
                           className="p-1.5 sm:p-2 text-purple-600 hover:text-purple-700 hover:bg-purple-50 rounded-lg transition"
                           title="Generate Invoice"
@@ -390,7 +567,7 @@ export default function PaymentsPage() {
                   value={formData.project_id}
                   onChange={(e) => setFormData({ ...formData, project_id: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 >
                   <option value="">Select a project</option>
                   {projects.map((project) => (
@@ -408,7 +585,7 @@ export default function PaymentsPage() {
                   value={formData.amount}
                   onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 />
               </div>
               <div>
@@ -416,7 +593,7 @@ export default function PaymentsPage() {
                 <select
                   value={formData.payment_type}
                   onChange={(e) => setFormData({ ...formData, payment_type: e.target.value as "advance" | "partial" | "final" | "" })}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 >
                   <option value="">Select type (optional)</option>
                   <option value="advance">Advance Payment</option>
@@ -431,7 +608,7 @@ export default function PaymentsPage() {
                   value={formData.date}
                   onChange={(e) => setFormData({ ...formData, date: e.target.value })}
                   required
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 />
               </div>
               <div>
@@ -440,7 +617,7 @@ export default function PaymentsPage() {
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={3}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent text-gray-900"
+                  className="w-full px-4 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900 text-sm"
                 />
               </div>
               {error && (
@@ -459,6 +636,9 @@ export default function PaymentsPage() {
                       date: format(new Date(), "yyyy-MM-dd"),
                       notes: "",
                       payment_type: "",
+                      payment_method: "upi",
+                      upi_id: "",
+                      bank_account: "",
                     });
                     setError("");
                   }}
@@ -468,9 +648,10 @@ export default function PaymentsPage() {
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition"
+                  disabled={submitting}
+                  className="flex-1 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  Add Payment
+                  {submitting ? "Adding..." : "Add Payment"}
                 </button>
               </div>
             </form>
@@ -479,7 +660,7 @@ export default function PaymentsPage() {
       )}
 
       {/* Invoice Generator */}
-      <div data-tour="payments-invoice-location">
+      <div>
         <InvoiceGenerator
           isOpen={showInvoice}
           onClose={() => {

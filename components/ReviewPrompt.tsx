@@ -81,7 +81,14 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
       <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 relative">
-        {/* Remove close button - feedback is required */}
+        {/* Close/Skip button */}
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition"
+          title="Skip feedback"
+        >
+          <X className="w-5 h-5" />
+        </button>
 
         <div className="text-center mb-6">
           <div className="w-16 h-16 bg-purple-100 rounded-full flex items-center justify-center mx-auto mb-4">
@@ -142,13 +149,20 @@ export default function ReviewPrompt({ isOpen, onClose, onSubmitted }: ReviewPro
           <button
             onClick={handleSubmit}
             disabled={rating === 0 || submitting}
-            className="w-full px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
+            className="flex-1 px-4 py-2 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-lg font-semibold hover:shadow-lg transition disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {submitting ? "Submitting..." : "Submit Feedback"}
           </button>
+          <button
+            onClick={onClose}
+            disabled={submitting}
+            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg font-medium hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            Skip
+          </button>
         </div>
         <p className="text-xs text-gray-500 text-center mt-3">
-          Your feedback helps us improve! Please share your experience.
+          Your feedback helps us improve! You can skip if you prefer.
         </p>
       </div>
     </div>
