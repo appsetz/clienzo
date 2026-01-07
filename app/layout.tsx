@@ -50,7 +50,7 @@ export const metadata: Metadata = {
     description: "Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features for freelancers and agencies.",
     images: [
       {
-        url: "/images/logo-symbol.png",
+        url: "/images/logo.png",
         width: 1200,
         height: 630,
         alt: "Clienova - Client Management Software",
@@ -61,23 +61,23 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Clienova - Best Client Manager Software",
     description: "Manage clients, projects, payments, and deadlines all in one place. Free client manager software with Pro features.",
-    images: ["/images/logo-symbol.png"],
+    images: ["/images/logo.png"],
   },
   alternates: {
     canonical: "https://clienzo.com",
   },
   icons: {
     icon: [
-      { url: "/images/favicon.png", sizes: "64x64", type: "image/png" },
-      { url: "/images/favicon.png", sizes: "48x48", type: "image/png" },
-      { url: "/images/favicon.png", sizes: "32x32", type: "image/png" },
+      { url: "/images/logo.png", sizes: "64x64", type: "image/png" },
+      { url: "/images/logo.png", sizes: "48x48", type: "image/png" },
+      { url: "/images/logo.png", sizes: "32x32", type: "image/png" },
     ],
     apple: [
-      { url: "/images/favicon.png", sizes: "180x180", type: "image/png" },
-      { url: "/images/favicon.png", sizes: "152x152", type: "image/png" },
-      { url: "/images/favicon.png", sizes: "120x120", type: "image/png" },
+      { url: "/images/logo.png", sizes: "180x180", type: "image/png" },
+      { url: "/images/logo.png", sizes: "152x152", type: "image/png" },
+      { url: "/images/logo.png", sizes: "120x120", type: "image/png" },
     ],
-    shortcut: "/images/favicon.png",
+    shortcut: "/images/logo.png",
   },
   manifest: "/manifest.json",
   category: "business",
