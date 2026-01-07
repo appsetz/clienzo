@@ -340,7 +340,7 @@ export default function Home() {
           <div>
             <div className="flex items-center gap-2 mb-4">
               <Image
-                src="/images/clienova-logo-removebg-preview.png"
+                src="/images/logo.png"
                 alt="Clienova"
                 width={200}
                 height={67}

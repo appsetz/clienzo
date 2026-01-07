@@ -58,11 +58,11 @@ export const HeroSection = () => {
               <div className="flex w-full justify-between lg:w-auto">
                 <Link href="/" aria-label="home" className="flex items-center space-x-2">
                   <Image
-                    src="/images/clienova-logo-removebg-preview.png"
+                    src="/images/logo bg remobved.png"
                     alt="Clienova"
                     width={300}
                     height={100}
-                    className="h-8 md:h-10 lg:h-12 w-auto object-contain"
+                    className="h-12 md:h-16 lg:h-20 w-auto object-contain"
                   />
                 </Link>
                 <button

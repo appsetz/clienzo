@@ -20,7 +20,7 @@ export default function TermsPage() {
           <div className="bg-white rounded-lg shadow-lg p-6 md:p-10">
             <div className="flex items-center gap-3 mb-8">
               <Image
-                src="/images/clienova-logo-removebg-preview.png"
+                src="/images/logo.png"
                 alt="Clienova"
                 width={150}
                 height={50}

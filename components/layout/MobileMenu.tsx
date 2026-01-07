@@ -49,11 +49,11 @@ export default function MobileMenu() {
       >
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <Image
-            src="/images/clienova-logo-removebg-preview.png"
+            src="/images/logo bg remobved.png"
             alt="Clienova"
             width={250}
             height={83}
-            className="h-16 w-auto object-contain"
+            className="h-20 w-auto object-contain"
           />
           <button
             onClick={() => setIsOpen(false)}

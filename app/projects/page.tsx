@@ -643,10 +643,10 @@ export default function ProjectsPage() {
               {/* Team Member Selection (Agencies only) */}
               {userProfile?.userType === "agency" && teamMembers.length > 0 && (
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Team Members Managing This Project (Select up to 3)
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Team Members (Max 3)
                   </label>
-                  <div className="space-y-2 max-h-48 overflow-y-auto border border-gray-200 rounded-lg p-3">
+                  <div className="border border-gray-200 rounded-xl p-4 max-h-64 overflow-y-auto bg-gray-50/50 space-y-2">
                     {teamMembers.map((member) => {
                       const teamMembersArray = formData.team_members || [];
                       const isSelected = teamMembersArray.includes(member.id!);
@@ -655,52 +655,62 @@ export default function ProjectsPage() {
                       return (
                         <label
                           key={member.id}
-                          className={`flex items-center gap-3 p-2 rounded-lg cursor-pointer transition ${
+                          className={`flex items-center gap-3 p-3 rounded-lg cursor-pointer transition-all duration-200 ${
                             isSelected
-                              ? "bg-purple-50 border-2 border-purple-500"
+                              ? "bg-blue-50 border-2 border-blue-300 shadow-sm"
                               : isDisabled
-                              ? "bg-gray-50 opacity-50 cursor-not-allowed"
-                              : "hover:bg-gray-50 border-2 border-transparent"
+                              ? "opacity-50 cursor-not-allowed bg-white"
+                              : "hover:bg-white border-2 border-transparent hover:border-gray-200 hover:shadow-sm"
                           }`}
                         >
-                          <input
-                            type="checkbox"
-                            checked={isSelected}
-                            onChange={(e) => {
-                              const currentTeamMembers = formData.team_members || [];
-                              if (e.target.checked) {
-                                if (currentTeamMembers.length < 3) {
+                          <div className="flex items-center justify-center w-5 h-5">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={(e) => {
+                                const currentTeamMembers = formData.team_members || [];
+                                if (e.target.checked) {
+                                  if (currentTeamMembers.length < 3) {
+                                    setFormData({
+                                      ...formData,
+                                      team_members: [...currentTeamMembers, member.id!],
+                                    });
+                                  }
+                                } else {
                                   setFormData({
                                     ...formData,
-                                    team_members: [...currentTeamMembers, member.id!],
+                                    team_members: currentTeamMembers.filter((id) => id !== member.id),
                                   });
                                 }
-                              } else {
-                                setFormData({
-                                  ...formData,
-                                  team_members: currentTeamMembers.filter((id) => id !== member.id),
-                                });
-                              }
-                            }}
-                            disabled={isDisabled && !isSelected}
-                            className="w-4 h-4 text-purple-600 border-gray-300 rounded focus:ring-purple-500"
-                          />
-                          <div className="flex items-center gap-2 flex-1">
-                            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-white font-semibold text-sm">
+                              }}
+                              disabled={isDisabled && !isSelected}
+                              className="w-4 h-4 text-blue-600 border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:ring-offset-0 cursor-pointer"
+                            />
+                          </div>
+                          <div className="flex items-center gap-3 flex-1 min-w-0">
+                            <div className="h-10 w-10 rounded-full bg-gradient-to-br from-slate-900 via-blue-700 to-blue-400 flex items-center justify-center text-white font-semibold text-sm flex-shrink-0 shadow-sm">
                               {member.name.charAt(0).toUpperCase()}
                             </div>
-                            <div className="flex-1">
-                              <p className="text-sm font-medium text-gray-900">{member.name}</p>
-                              <p className="text-xs text-gray-500">{member.role}</p>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-semibold text-gray-900 truncate">{member.name}</p>
+                              <p className="text-xs text-gray-600 mt-0.5">{member.role}</p>
                             </div>
                           </div>
                         </label>
                       );
                     })}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {(formData.team_members || []).length}/3 members selected
-                  </p>
+                  <div className="flex items-center justify-between mt-3 px-1">
+                    <p className="text-xs font-medium text-gray-600">
+                      <span className={`font-semibold ${(formData.team_members || []).length > 0 ? "text-blue-600" : "text-gray-500"}`}>
+                        {(formData.team_members || []).length}
+                      </span>
+                      <span className="text-gray-500"> / 3 members selected</span>
+                    </p>
+                    {(formData.team_members || []).length >= 3 && (
+                      <p className="text-xs text-orange-600 font-medium">Maximum reached</p>
+                    )}
+                  </div>
                 </div>
               )}
               

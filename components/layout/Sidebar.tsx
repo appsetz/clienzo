@@ -232,11 +232,11 @@ export default function Sidebar() {
         <div className="p-3 bg-gray-50 border-t border-gray-100">
           <div className="flex items-center justify-center gap-2 opacity-70">
             <Image
-              src="/images/clienova-logo-removebg-preview.png"
+              src="/images/logo-header.png"
               alt="Clienova"
               width={80}
               height={24}
-              className="h-4 w-auto object-contain opacity-60"
+              className="h-5 w-auto object-contain opacity-60"
             />
           </div>
         </div>
