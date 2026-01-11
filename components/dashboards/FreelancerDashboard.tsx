@@ -12,7 +12,7 @@ import RevenueIntelligence from "@/components/dashboard/RevenueIntelligence";
 import ArcChart from "@/components/dashboard/ArcChart";
 import PaymentTimeline from "@/components/dashboard/PaymentTimeline";
 import MonthSelector from "@/components/dashboard/MonthSelector";
-import { filterPaymentsByMonth, filterProjectsByMonth, calculateMonthlyRevenue, getMonthlyChartData, filterClientsByMonth } from "@/lib/dateUtils";
+import { filterPaymentsByMonth, filterProjectsByMonth, calculateMonthlyRevenue, getMonthlyChartData, filterClientsByMonth, filterPaymentsByYear, filterProjectsByYear, calculateYearlyRevenue, getProjectStatusCountsByMonth, getProjectStatusCountsByYear, getPaymentStatusByMonth, getPaymentStatusByYear } from "@/lib/dateUtils";
 import { exportToCSV } from "@/lib/utils/exportData";
 
 export default function FreelancerDashboard() {
@@ -22,6 +22,7 @@ export default function FreelancerDashboard() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [arcChartView, setArcChartView] = useState<"monthly" | "yearly">("monthly");
   const [activeTab, setActiveTab] = useState<"overview" | "clients" | "projects">("overview");
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const { showPrompt: showReviewPrompt, handleFeedbackSubmitted, handleClose } = useFeatureFeedback();
@@ -67,61 +68,88 @@ export default function FreelancerDashboard() {
   // Chart data for the area chart (last 12 months ending at selected month)
   const chartData = useMemo(() => getMonthlyChartData(payments, projects, 11, selectedMonth), [payments, projects, selectedMonth]);
 
-  // Prepare data for arc charts - using all-time data by default, can switch to monthly
-  const projectStatusData = useMemo(() => [
-    {
-      name: "Active",
-      value: projects.filter((p) => p.status === "active").length,
-    },
-    {
-      name: "Completed",
-      value: projects.filter((p) => p.status === "completed").length,
-    },
-    {
-      name: "On Hold",
-      value: projects.filter((p) => p.status === "on-hold").length,
-    },
-    {
-      name: "Cancelled",
-      value: projects.filter((p) => p.status === "cancelled").length,
-    },
-  ].filter((item) => item.value > 0), [projects]);
+  // Prepare data for arc charts - monthly or yearly view
+  const selectedYear = useMemo(() => new Date(selectedMonth.getFullYear(), 0, 1), [selectedMonth]);
+  
+  const projectStatusData = useMemo(() => {
+    if (arcChartView === "monthly") {
+      const counts = getProjectStatusCountsByMonth(projects, selectedMonth);
+      return [
+        { name: "Active", value: counts.active },
+        { name: "Completed", value: counts.completed },
+        { name: "On Hold", value: counts.onHold },
+        { name: "Cancelled", value: counts.cancelled },
+      ].filter((item) => item.value > 0);
+    } else {
+      const counts = getProjectStatusCountsByYear(projects, selectedYear);
+      return [
+        { name: "Active", value: counts.active },
+        { name: "Completed", value: counts.completed },
+        { name: "On Hold", value: counts.onHold },
+        { name: "Cancelled", value: counts.cancelled },
+      ].filter((item) => item.value > 0);
+    }
+  }, [projects, selectedMonth, selectedYear, arcChartView]);
 
-  // Monthly payment data for the arc chart
-  const monthlyPaid = useMemo(() => monthlyPayments.reduce((sum, p) => sum + p.amount, 0), [monthlyPayments]);
+  const paymentStatusData = useMemo(() => {
+    if (arcChartView === "monthly") {
+      const status = getPaymentStatusByMonth(payments, projects, selectedMonth);
+      return [
+        {
+          name: `Paid in ${format(selectedMonth, "MMM yyyy")}`,
+          value: status.paid,
+        },
+        {
+          name: "Pending",
+          value: status.pending,
+        },
+      ].filter((item) => item.value > 0);
+    } else {
+      const status = getPaymentStatusByYear(payments, projects, selectedYear);
+      return [
+        {
+          name: `Paid in ${format(selectedYear, "yyyy")}`,
+          value: status.paid,
+        },
+        {
+          name: "Pending",
+          value: status.pending,
+        },
+      ].filter((item) => item.value > 0);
+    }
+  }, [payments, projects, selectedMonth, selectedYear, arcChartView]);
 
-  const pendingPayments = useMemo(() => projects.reduce((sum, project) => {
-    const projectPayments = payments.filter((p) => p.project_id === project.id);
-    const paid = projectPayments.reduce((s, p) => s + p.amount, 0);
-    const pending = project.total_amount - paid;
-    return sum + (pending > 0 ? pending : 0);
-  }, 0), [projects, payments]);
-
-  const paymentStatusData = useMemo(() => [
-    {
-      name: `Paid in ${format(selectedMonth, "MMM")}`,
-      value: monthlyPaid,
-    },
-    {
-      name: "Pending",
-      value: pendingPayments,
-    },
-  ].filter((item) => item.value > 0), [monthlyPaid, pendingPayments, selectedMonth]);
-
-  const upcomingReminders = useMemo(() => projects
-    .filter((p) => {
-      if (!p.reminder_date) return false;
-      const reminderDate = new Date(p.reminder_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff >= 0 && daysDiff <= 7;
-    })
-    .sort((a, b) => {
-      const dateA = a.reminder_date ? new Date(a.reminder_date).getTime() : 0;
-      const dateB = b.reminder_date ? new Date(b.reminder_date).getTime() : 0;
-      return dateA - dateB;
-    }), [projects]);
+  const upcomingReminders = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return projects
+      .map((p) => {
+        // Check reminder_date first
+        if (p.reminder_date) {
+          const reminderDate = new Date(p.reminder_date);
+          reminderDate.setHours(0, 0, 0, 0);
+          const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 7) {
+            return { project: p, date: reminderDate, type: 'reminder' as const };
+          }
+        }
+        
+        // Check deadline if no reminder_date or reminder_date is outside range
+        if (p.deadline && p.status === 'active') {
+          const deadline = new Date(p.deadline);
+          deadline.setHours(0, 0, 0, 0);
+          const daysDiff = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 7) {
+            return { project: p, date: deadline, type: 'deadline' as const };
+          }
+        }
+        
+        return null;
+      })
+      .filter((item): item is { project: Project; date: Date; type: 'reminder' | 'deadline' } => item !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [projects]);
 
   if (loading) {
     return (
@@ -307,21 +335,20 @@ export default function FreelancerDashboard() {
           </div>
           <div className="bg-white rounded-lg shadow p-6">
             <div className="space-y-3">
-              {upcomingReminders.slice(0, 5).map((project) => {
-                const reminderDate = project.reminder_date ? new Date(project.reminder_date) : new Date();
+              {upcomingReminders.slice(0, 5).map((item) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const daysDiff = Math.ceil((item.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 return (
                   <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
+                    key={item.project.id}
+                    href={`/projects/${item.project.id}`}
                     className="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                   >
                     <div>
-                      <p className="font-medium text-gray-900">{project.name}</p>
+                      <p className="font-medium text-gray-900">{item.project.name}</p>
                       <p className="text-sm text-gray-600">
-                        Follow up on {format(reminderDate, "MMM dd, yyyy")}
+                        {item.type === 'deadline' ? 'Deadline' : 'Follow up'} on {format(item.date, "MMM dd, yyyy")}
                       </p>
                     </div>
                     <div className={`px-3 py-1 rounded-full text-xs font-medium ${
@@ -340,21 +367,50 @@ export default function FreelancerDashboard() {
       )}
 
       {/* Arc Charts Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <ArcChart
-          title="Project Status Distribution"
-          data={projectStatusData}
-          height={300}
-          innerRadius={60}
-          outerRadius={120}
-        />
-        <ArcChart
-          title={`Payment Status - ${format(selectedMonth, "MMMM yyyy")}`}
-          data={paymentStatusData}
-          height={300}
-          innerRadius={60}
-          outerRadius={120}
-        />
+      <div className="space-y-4">
+        {/* Toggle for Monthly/Yearly View */}
+        <div className="flex items-center justify-end gap-2">
+          <span className="text-sm text-gray-600">View:</span>
+          <div className="flex items-center bg-gray-100 rounded-lg p-1">
+            <button
+              onClick={() => setArcChartView("monthly")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+                arcChartView === "monthly"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Monthly
+            </button>
+            <button
+              onClick={() => setArcChartView("yearly")}
+              className={`px-4 py-2 text-sm font-medium rounded-md transition ${
+                arcChartView === "yearly"
+                  ? "bg-white text-gray-900 shadow-sm"
+                  : "text-gray-600 hover:text-gray-900"
+              }`}
+            >
+              Yearly
+            </button>
+          </div>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <ArcChart
+            title={`Project Status Distribution${arcChartView === "monthly" ? ` - ${format(selectedMonth, "MMMM yyyy")}` : ` - ${format(selectedYear, "yyyy")}`}`}
+            data={projectStatusData}
+            height={300}
+            innerRadius={60}
+            outerRadius={120}
+          />
+          <ArcChart
+            title={`Payment Status${arcChartView === "monthly" ? ` - ${format(selectedMonth, "MMMM yyyy")}` : ` - ${format(selectedYear, "yyyy")}`}`}
+            data={paymentStatusData}
+            height={300}
+            innerRadius={60}
+            outerRadius={120}
+          />
+        </div>
       </div>
 
       {/* Revenue Intelligence */}

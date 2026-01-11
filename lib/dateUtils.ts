@@ -1,4 +1,4 @@
-import { startOfMonth, endOfMonth, format, subMonths, eachMonthOfInterval, isSameMonth } from "date-fns";
+import { startOfMonth, endOfMonth, format, subMonths, eachMonthOfInterval, isSameMonth, startOfYear, endOfYear, subYears, eachYearOfInterval } from "date-fns";
 import { Payment, Project, Client, Investment } from "@/lib/firebase/db";
 
 export interface DateRange {
@@ -171,4 +171,69 @@ export function getClientRevenueByMonth(
 
     return { client, revenue, projectCount: clientProjects.length };
   }).sort((a, b) => b.revenue - a.revenue);
+}
+
+// Get date range for a specific year
+export function getYearDateRange(year: Date): DateRange {
+  return {
+    start: startOfYear(year),
+    end: endOfYear(year),
+  };
+}
+
+// Filter payments by year
+export function filterPaymentsByYear(payments: Payment[], year: Date): Payment[] {
+  const { start, end } = getYearDateRange(year);
+  return payments.filter((p) => {
+    const paymentDate = new Date(p.date);
+    return paymentDate >= start && paymentDate <= end;
+  });
+}
+
+// Filter projects by creation year
+export function filterProjectsByYear(projects: Project[], year: Date): Project[] {
+  const { start, end } = getYearDateRange(year);
+  return projects.filter((p) => {
+    const createdDate = new Date(p.createdAt);
+    return createdDate >= start && createdDate <= end;
+  });
+}
+
+// Calculate yearly revenue
+export function calculateYearlyRevenue(payments: Payment[], year: Date): number {
+  const yearPayments = filterPaymentsByYear(payments, year);
+  return yearPayments.reduce((sum, p) => sum + p.amount, 0);
+}
+
+// Get project status counts for a specific year
+export function getProjectStatusCountsByYear(projects: Project[], year: Date) {
+  const yearProjects = filterProjectsByYear(projects, year);
+
+  return {
+    active: yearProjects.filter((p) => p.status === "active").length,
+    completed: yearProjects.filter((p) => p.status === "completed").length,
+    onHold: yearProjects.filter((p) => p.status === "on-hold").length,
+    cancelled: yearProjects.filter((p) => p.status === "cancelled").length,
+    total: yearProjects.length,
+  };
+}
+
+// Get payment status for a specific year
+export function getPaymentStatusByYear(
+  payments: Payment[],
+  projects: Project[],
+  year: Date
+) {
+  const yearPayments = filterPaymentsByYear(payments, year);
+  const paid = yearPayments.reduce((sum, p) => sum + p.amount, 0);
+
+  // Calculate pending from projects active in that year
+  const pending = projects.reduce((sum, project) => {
+    const projectPayments = payments.filter((p) => p.project_id === project.id);
+    const projectPaid = projectPayments.reduce((s, p) => s + p.amount, 0);
+    const pendingAmount = project.total_amount - projectPaid;
+    return sum + (pendingAmount > 0 ? pendingAmount : 0);
+  }, 0);
+
+  return { paid, pending };
 }

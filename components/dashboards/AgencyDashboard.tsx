@@ -9,15 +9,14 @@ import { collection, getDocs, query, where } from "firebase/firestore";
 import {
   Users, FolderKanban, CreditCard, TrendingUp, AlertCircle, Clock,
   UserPlus, Mail, DollarSign, ArrowUpRight, ArrowDownRight,
-  Download, ChevronRight, Calendar, Info, Building2
+  ChevronRight, Calendar, Info, Building2
 } from "lucide-react";
 import { format, subMonths, startOfMonth, endOfMonth, eachMonthOfInterval } from "date-fns";
 import Link from "next/link";
 import ReviewPrompt from "@/components/ReviewPrompt";
 import { useFeatureFeedback } from "@/hooks/useFeatureFeedback";
 import MonthSelector from "@/components/dashboard/MonthSelector";
-import { exportToCSV } from "@/lib/utils/exportData";
-import { filterPaymentsByMonth, filterProjectsByMonth, filterClientsByMonth, calculateMonthlyRevenue, getMonthlyChartData } from "@/lib/dateUtils";
+import { filterPaymentsByMonth, filterProjectsByMonth, filterClientsByMonth, calculateMonthlyRevenue, getMonthlyChartData, getProjectStatusCountsByMonth, getProjectStatusCountsByYear } from "@/lib/dateUtils";
 
 export default function AgencyDashboard() {
   const { user, userProfile } = useAuth();
@@ -29,8 +28,8 @@ export default function AgencyDashboard() {
   const [emailSettings, setEmailSettings] = useState<any>(null);
   const [emailStats, setEmailStats] = useState({ rulesCount: 0, sentCount: 0 });
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "clients" | "projects">("overview");
   const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [arcChartView, setArcChartView] = useState<"monthly" | "yearly">("monthly");
   const [hoveredPoint, setHoveredPoint] = useState<number | null>(null);
   const { showPrompt: showReviewPrompt, handleFeedbackSubmitted, handleClose } = useFeatureFeedback();
 
@@ -111,20 +110,47 @@ export default function AgencyDashboard() {
   }, [clients, projects, payments, selectedMonth]);
 
   // Upcoming reminders
-  const upcomingReminders = useMemo(() => projects
-    .filter((p) => {
-      if (!p.reminder_date) return false;
-      const reminderDate = new Date(p.reminder_date);
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
-      return daysDiff >= 0 && daysDiff <= 7;
-    })
-    .sort((a, b) => {
-      const dateA = a.reminder_date ? new Date(a.reminder_date).getTime() : 0;
-      const dateB = b.reminder_date ? new Date(b.reminder_date).getTime() : 0;
-      return dateA - dateB;
-    }), [projects]);
+  const upcomingReminders = useMemo(() => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    return projects
+      .map((p) => {
+        // Check reminder_date first
+        if (p.reminder_date) {
+          const reminderDate = new Date(p.reminder_date);
+          reminderDate.setHours(0, 0, 0, 0);
+          const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 7) {
+            return { project: p, date: reminderDate, type: 'reminder' as const };
+          }
+        }
+        
+        // Check deadline if no reminder_date or reminder_date is outside range
+        if (p.deadline && p.status === 'active') {
+          const deadline = new Date(p.deadline);
+          deadline.setHours(0, 0, 0, 0);
+          const daysDiff = Math.ceil((deadline.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+          if (daysDiff >= 0 && daysDiff <= 7) {
+            return { project: p, date: deadline, type: 'deadline' as const };
+          }
+        }
+        
+        return null;
+      })
+      .filter((item): item is { project: Project; date: Date; type: 'reminder' | 'deadline' } => item !== null)
+      .sort((a, b) => a.date.getTime() - b.date.getTime());
+  }, [projects]);
+
+  // Calculate stats - use monthly/yearly filtered data for project status
+  const selectedYear = useMemo(() => new Date(selectedMonth.getFullYear(), 0, 1), [selectedMonth]);
+  const projectStatusCounts = useMemo(() => {
+    if (arcChartView === "monthly") {
+      return getProjectStatusCountsByMonth(projects, selectedMonth);
+    } else {
+      return getProjectStatusCountsByYear(projects, selectedYear);
+    }
+  }, [projects, selectedMonth, selectedYear, arcChartView]);
 
   if (loading) {
     return (
@@ -136,8 +162,7 @@ export default function AgencyDashboard() {
       </div>
     );
   }
-
-  // Calculate stats
+  
   const activeProjects = projects.filter((p) => p.status === "active");
   const completedProjects = projects.filter((p) => p.status === "completed");
   const totalRevenue = payments.reduce((sum, p) => sum + p.amount, 0);
@@ -169,15 +194,6 @@ export default function AgencyDashboard() {
 
   const colors = ["bg-teal-500", "bg-cyan-500", "bg-emerald-500", "bg-blue-500", "bg-indigo-500", "bg-violet-500"];
 
-  // Handle export
-  const handleExport = () => {
-    const exportData = [
-      ...clients.map(c => ({ type: "Client", name: c.name, email: c.email || "", phone: c.phone || "", createdAt: c.createdAt })),
-      ...projects.map(p => ({ type: "Project", name: p.name, status: p.status, amount: p.total_amount, createdAt: p.createdAt })),
-      ...payments.map(p => ({ type: "Payment", amount: p.amount, date: p.date, createdAt: p.createdAt })),
-    ];
-    exportToCSV(exportData, "dashboard_data");
-  };
 
   return (
     <div className="space-y-6">
@@ -195,46 +211,6 @@ export default function AgencyDashboard() {
               minDate={subMonths(new Date(), 24)}
               maxDate={new Date()}
             />
-            {/* Tabs */}
-            <div className="flex items-center border-b border-gray-200">
-              <button
-                onClick={() => setActiveTab("overview")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-                  activeTab === "overview"
-                    ? "border-teal-500 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Overview
-              </button>
-              <button
-                onClick={() => setActiveTab("clients")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-                  activeTab === "clients"
-                    ? "border-teal-500 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Clients Analysis
-              </button>
-              <button
-                onClick={() => setActiveTab("projects")}
-                className={`px-4 py-2 text-sm font-medium border-b-2 transition ${
-                  activeTab === "projects"
-                    ? "border-teal-500 text-teal-600"
-                    : "border-transparent text-gray-500 hover:text-gray-700"
-                }`}
-              >
-                Projects Analysis
-              </button>
-            </div>
-            <button 
-              onClick={handleExport}
-              className="flex items-center gap-2 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition"
-            >
-              <Download className="w-4 h-4" />
-              Export
-            </button>
           </div>
         </div>
       </div>
@@ -630,9 +606,38 @@ export default function AgencyDashboard() {
 
         {/* Project Status */}
         <div className="bg-white rounded-2xl border border-gray-100 p-5">
-          <div className="flex items-center gap-2 mb-4">
-            <h3 className="text-base font-semibold text-gray-900">Project Status</h3>
-            <Info className="w-4 h-4 text-gray-400" />
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <h3 className="text-base font-semibold text-gray-900">
+                Project Status{arcChartView === "monthly" ? ` - ${format(selectedMonth, "MMMM yyyy")}` : ` - ${format(selectedYear, "yyyy")}`}
+              </h3>
+              <Info className="w-4 h-4 text-gray-400" />
+            </div>
+            {/* Toggle for Monthly/Yearly View */}
+            <div className="flex items-center gap-2">
+              <div className="flex items-center bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setArcChartView("monthly")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    arcChartView === "monthly"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Monthly
+                </button>
+                <button
+                  onClick={() => setArcChartView("yearly")}
+                  className={`px-3 py-1 text-xs font-medium rounded-md transition ${
+                    arcChartView === "yearly"
+                      ? "bg-white text-gray-900 shadow-sm"
+                      : "text-gray-600 hover:text-gray-900"
+                  }`}
+                >
+                  Yearly
+                </button>
+              </div>
+            </div>
           </div>
 
           {projects.length > 0 ? (
@@ -642,10 +647,10 @@ export default function AgencyDashboard() {
                 <svg viewBox="0 0 100 100" className="w-40 h-40">
                   {(() => {
                     const statusCounts = [
-                      { name: "Active", value: activeProjects.length, color: "#14b8a6" },
-                      { name: "Completed", value: completedProjects.length, color: "#3b82f6" },
-                      { name: "On Hold", value: projects.filter(p => p.status === "on-hold").length, color: "#f59e0b" },
-                      { name: "Cancelled", value: projects.filter(p => p.status === "cancelled").length, color: "#ef4444" },
+                      { name: "Active", value: projectStatusCounts.active, color: "#14b8a6" },
+                      { name: "Completed", value: projectStatusCounts.completed, color: "#3b82f6" },
+                      { name: "On Hold", value: projectStatusCounts.onHold, color: "#f59e0b" },
+                      { name: "Cancelled", value: projectStatusCounts.cancelled, color: "#ef4444" },
                     ].filter(s => s.value > 0);
                     
                     const total = statusCounts.reduce((sum, s) => sum + s.value, 0);
@@ -679,7 +684,7 @@ export default function AgencyDashboard() {
                   })()}
                   <circle cx="50" cy="50" r="22" fill="white" />
                   <text x="50" y="47" textAnchor="middle" className="text-lg font-bold fill-gray-900" fontSize="14">
-                    {projects.length}
+                    {projectStatusCounts.total}
                   </text>
                   <text x="50" y="58" textAnchor="middle" className="fill-gray-500" fontSize="6">
                     Projects
@@ -690,10 +695,10 @@ export default function AgencyDashboard() {
               {/* Legend */}
               <div className="grid grid-cols-2 gap-2">
                 {[
-                  { name: "Active", value: activeProjects.length, color: "bg-teal-500" },
-                  { name: "Completed", value: completedProjects.length, color: "bg-blue-500" },
-                  { name: "On Hold", value: projects.filter(p => p.status === "on-hold").length, color: "bg-amber-500" },
-                  { name: "Cancelled", value: projects.filter(p => p.status === "cancelled").length, color: "bg-red-500" },
+                  { name: "Active", value: projectStatusCounts.active, color: "bg-teal-500" },
+                  { name: "Completed", value: projectStatusCounts.completed, color: "bg-blue-500" },
+                  { name: "On Hold", value: projectStatusCounts.onHold, color: "bg-amber-500" },
+                  { name: "Cancelled", value: projectStatusCounts.cancelled, color: "bg-red-500" },
                 ].filter(s => s.value > 0).map((status, i) => (
                   <div key={i} className="flex items-center gap-2 text-xs">
                     <div className={`w-2.5 h-2.5 rounded-full ${status.color}`}></div>
@@ -724,22 +729,21 @@ export default function AgencyDashboard() {
           
           {upcomingReminders.length > 0 ? (
             <div className="space-y-2">
-              {upcomingReminders.slice(0, 5).map((project) => {
-                const reminderDate = project.reminder_date ? new Date(project.reminder_date) : new Date();
+              {upcomingReminders.slice(0, 5).map((item) => {
                 const today = new Date();
                 today.setHours(0, 0, 0, 0);
-                const daysDiff = Math.ceil((reminderDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
+                const daysDiff = Math.ceil((item.date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24));
                 return (
                   <Link
-                    key={project.id}
-                    href={`/projects/${project.id}`}
+                    key={item.project.id}
+                    href={`/projects/${item.project.id}`}
                     className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                   >
                     <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{project.name}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">{item.project.name}</p>
                       <p className="text-[10px] text-gray-500 flex items-center gap-1">
                         <Calendar className="w-3 h-3" />
-                        {format(reminderDate, "MMM dd, yyyy")}
+                        {item.type === 'deadline' ? 'Deadline' : 'Follow up'} {format(item.date, "MMM dd, yyyy")}
                       </p>
                     </div>
                     <div className={`px-2 py-1 rounded-full text-[10px] font-medium ${
