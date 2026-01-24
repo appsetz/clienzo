@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import SEOStructuredData from "@/components/SEOStructuredData";
 import MobileBlock from "@/components/MobileBlock";
+import BottomNavWrapper from "@/components/layout/BottomNavWrapper";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -93,7 +94,10 @@ export default function RootLayout({
       <body className={inter.className}>
         <SEOStructuredData />
         <MobileBlock />
-        <AuthProvider>{children}</AuthProvider>
+        <AuthProvider>
+          {children}
+          <BottomNavWrapper />
+        </AuthProvider>
       </body>
     </html>
   );

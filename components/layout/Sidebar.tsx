@@ -59,7 +59,7 @@ export default function Sidebar() {
   };
 
   return (
-    <aside className="hidden md:flex w-64 bg-white border-r border-gray-100 h-screen fixed left-0 top-0 flex-col">
+    <aside className="hidden md:flex w-64 bg-white border-r border-gray-100 h-screen fixed left-0 top-0 flex-col z-30">
       {/* Logo Section with Profile */}
       <div className="p-5 border-b border-gray-100">
         <div className="flex items-center justify-between">

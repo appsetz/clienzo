@@ -3,7 +3,7 @@
 import { useEffect, useState, useCallback } from "react";
 import { useAuth } from "@/contexts/AuthContext";
 import { getClients, createClient, updateClient, deleteClient, Client } from "@/lib/firebase/db";
-import { Plus, Edit2, Trash2, Mail, Phone, User, Search, Download, Filter, ChevronRight } from "lucide-react";
+import { Plus, Edit2, Trash2, Mail, Phone, User, Search, Download, ChevronRight } from "lucide-react";
 import { checkClientLimit, getPlanLimits } from "@/lib/plan-limits";
 import Link from "next/link";
 import { getPayments, getProjects, Payment, Project } from "@/lib/firebase/db";
@@ -179,41 +179,56 @@ export default function ClientsPage() {
               Manage your {clients.length} {clients.length === 1 ? "client" : "clients"}
             </p>
           </div>
-          <div className="flex flex-wrap items-center gap-3">
-            {/* Search */}
-            <div className="relative">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 lg:gap-4 w-full lg:w-auto">
+            {/* Search - Responsive */}
+            <div className="relative w-full lg:w-56">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Search clients..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition w-56 text-gray-900"
+                className="w-full lg:w-56 pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-400 transition text-gray-900"
               />
+              
+              {/* Mobile Search Results Dropdown */}
+              {searchQuery && filteredClients.length > 0 && (
+                <div className="lg:hidden absolute top-full left-0 right-0 mt-2 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-64 overflow-y-auto">
+                  {filteredClients.slice(0, 5).map((client) => (
+                    <div
+                      key={client.id}
+                      className="px-4 py-3 border-b border-gray-100 last:border-b-0 cursor-pointer hover:bg-gray-50 transition"
+                    >
+                      <p className="text-sm font-medium text-gray-900">{client.name}</p>
+                      {client.email && <p className="text-xs text-gray-500">{client.email}</p>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
-            <button className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50 transition">
-              <Filter className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={handleExport}
-              disabled={clients.length === 0}
-              className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Download className="w-4 h-4" />
-              Export CSV
-            </button>
-            <button
-              onClick={() => {
-                setEditingClient(null);
-                setFormData({ name: "", email: "", phone: "", notes: "" });
-                setShowModal(true);
-              }}
-              disabled={!canAddMore}
-              className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <Plus className="w-4 h-4" />
-              Add Client
-            </button>
+            
+            <div className="flex items-center gap-2 lg:gap-3 w-full lg:w-auto">
+              <button 
+                onClick={handleExport}
+                disabled={clients.length === 0}
+                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-3 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Download className="w-4 h-4" />
+                <span className="hidden lg:inline">Export CSV</span>
+              </button>
+              <button
+                onClick={() => {
+                  setEditingClient(null);
+                  setFormData({ name: "", email: "", phone: "", notes: "" });
+                  setShowModal(true);
+                }}
+                disabled={!canAddMore}
+                className="flex-1 lg:flex-none flex items-center justify-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-4 h-4" />
+                <span className="hidden lg:inline">Add Client</span>
+              </button>
+            </div>
           </div>
         </div>
       </div>

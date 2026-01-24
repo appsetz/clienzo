@@ -189,18 +189,18 @@ export default function Header() {
 
   return (
     <>
-      <header className="bg-white border-b border-gray-100 px-6 py-4">
-        <div className="flex items-center justify-between">
-          {/* Welcome Message */}
-          <div>
-            <h1 className="text-xl font-semibold text-gray-900">
+      <header className="bg-white border-b border-gray-100 px-4 md:px-6 py-4 sticky top-0 z-20">
+        <div className="flex items-center justify-between gap-2 md:gap-4">
+          {/* Welcome Message - Mobile Stack */}
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg md:text-xl font-semibold text-gray-900 truncate">
               {getGreeting()}, {getUserName()}!
             </h1>
-            <p className="text-sm text-gray-500">{getRole()}</p>
+            <p className="text-xs md:text-sm text-gray-500 hidden md:block">{getRole()}</p>
           </div>
 
           {/* Right Side */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 md:gap-3 flex-shrink-0">
             {/* Search Bar */}
             <div className="relative hidden lg:block" ref={searchRef}>
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 z-10" />
@@ -308,14 +308,14 @@ export default function Header() {
             </div>
 
             {/* Icons */}
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-1 md:gap-2">
               {/* Notifications */}
               <button
                 onClick={() => setShowNotifications(!showNotifications)}
-                className="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition relative"
+                className="w-8 md:w-10 h-8 md:h-10 rounded-xl bg-gray-50 flex items-center justify-center hover:bg-gray-100 transition relative"
                 title="Notifications"
               >
-                <Bell className="w-5 h-5 text-gray-500" />
+                <Bell className="w-4 md:w-5 h-4 md:h-5 text-gray-500" />
                 <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full"></span>
               </button>
 
@@ -323,9 +323,9 @@ export default function Header() {
               <div className="relative" ref={profileMenuRef}>
                 <button
                   onClick={() => setShowProfileMenu(!showProfileMenu)}
-                  className="flex items-center gap-2 p-1 rounded-xl hover:bg-gray-50 transition"
+                  className="flex items-center gap-1 md:gap-2 p-1 rounded-xl hover:bg-gray-50 transition"
                 >
-                  <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-teal-200">
+                  <div className="w-8 md:w-10 h-8 md:h-10 rounded-full overflow-hidden border-2 border-teal-200">
                     {photoUrl ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img
@@ -334,20 +334,20 @@ export default function Header() {
                         className="w-full h-full object-cover"
                       />
                     ) : (
-                      <div className="w-full h-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-semibold text-sm">
+                      <div className="w-full h-full bg-gradient-to-br from-teal-400 to-cyan-500 flex items-center justify-center text-white font-semibold text-xs md:text-sm">
                         {getUserName().charAt(0).toUpperCase()}
                       </div>
                     )}
                   </div>
-                  <ChevronDown className={`w-4 h-4 text-gray-500 transition-transform ${showProfileMenu ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-3 md:w-4 h-3 md:h-4 text-gray-500 transition-transform hidden md:block ${showProfileMenu ? 'rotate-180' : ''}`} />
                 </button>
 
                 {/* Profile Dropdown Menu */}
                 {showProfileMenu && (
-                  <div className="absolute right-0 mt-2 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
+                  <div className="absolute right-0 mt-2 w-48 md:w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-2 z-50">
                     {/* User Info */}
                     <div className="px-4 py-3 border-b border-gray-100">
-                      <p className="text-sm font-medium text-gray-900">{getUserName()}</p>
+                      <p className="text-xs md:text-sm font-medium text-gray-900">{getUserName()}</p>
                       <p className="text-xs text-gray-500 truncate">{user?.email}</p>
                     </div>
 
@@ -356,7 +356,7 @@ export default function Header() {
                       <Link
                         href="/profile"
                         onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center gap-3 px-4 py-2.5 text-xs md:text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
                         <User className="w-4 h-4 text-gray-400" />
                         My Profile
@@ -364,7 +364,7 @@ export default function Header() {
                       <Link
                         href="/support"
                         onClick={() => setShowProfileMenu(false)}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition"
+                        className="flex items-center gap-3 px-4 py-2.5 text-xs md:text-sm text-gray-700 hover:bg-gray-50 transition"
                       >
                         <HelpCircle className="w-4 h-4 text-gray-400" />
                         Help & Support
@@ -375,7 +375,7 @@ export default function Header() {
                     <div className="border-t border-gray-100 pt-1">
                       <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 transition w-full"
+                        className="flex items-center gap-3 px-4 py-2.5 text-xs md:text-sm text-red-600 hover:bg-red-50 transition w-full"
                       >
                         <LogOut className="w-4 h-4" />
                         Sign Out

@@ -1,12 +1,13 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import Link from "next/link";
 import { useAuth } from "@/contexts/AuthContext";
 import { doc, updateDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { db, storage } from "@/lib/firebase/config";
 import { UserProfile } from "@/lib/firebase/auth";
-import { User, Mail, Phone, MapPin, FileText, Building2, Globe, Calendar, Users, Edit2, Save, X, Camera, Upload, Trash2 } from "lucide-react";
+import { User, Mail, Phone, MapPin, FileText, Building2, Globe, Calendar, Users, Edit2, Save, X, Camera, Upload, Trash2, HelpCircle } from "lucide-react";
 import { format } from "date-fns";
 import md5 from "crypto-js/md5";
 
@@ -265,13 +266,35 @@ export default function ProfilePage() {
               
               {/* Edit Button - inline with text */}
               {!isEditing && (
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition mt-3"
-                >
-                  <Edit2 className="w-4 h-4" />
-                  Edit Profile
-                </button>
+                <div className="flex flex-col gap-2 mt-3">
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-teal-500 text-white rounded-lg text-sm font-medium hover:bg-teal-600 transition w-full lg:w-auto lg:inline-flex justify-center"
+                  >
+                    <Edit2 className="w-4 h-4" />
+                    Edit Profile
+                  </button>
+                  
+                  {/* Quick Action Links - Mobile */}
+                  <div className="flex gap-2 lg:hidden">
+                    {isAgency && (
+                      <Link
+                        href="/email-automation"
+                        className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-purple-50 text-purple-600 border border-purple-200 rounded-lg text-sm font-medium hover:bg-purple-100 transition"
+                      >
+                        <Mail className="w-4 h-4" />
+                        Email
+                      </Link>
+                    )}
+                    <a
+                      href="mailto:support@clienova.com"
+                      className="flex-1 flex items-center justify-center gap-2 px-3 py-2 bg-blue-50 text-blue-600 border border-blue-200 rounded-lg text-sm font-medium hover:bg-blue-100 transition"
+                    >
+                      <HelpCircle className="w-4 h-4" />
+                      Support
+                    </a>
+                  </div>
+                </div>
               )}
             </div>
           </div>
