@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Users, FolderKanban, CreditCard, UserPlus, TrendingUp } from "lucide-react";
+import { LayoutDashboard, Users, FolderKanban, CreditCard, UserPlus, TrendingUp } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 
 const bottomNavItems = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
   { href: "/clients", label: "Clients", icon: Users },
   { href: "/projects", label: "Projects", icon: FolderKanban },
   { href: "/payments", label: "Payments", icon: CreditCard },
