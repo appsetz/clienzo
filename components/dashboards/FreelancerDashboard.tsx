@@ -174,6 +174,14 @@ export default function FreelancerDashboard() {
   const newClientsThisMonth = monthlyClients.length;
   const maxPayment = Math.max(...chartData.map((d) => d.payments), 1);
 
+  // Calculate pending payments
+  const pendingPayments = projects.reduce((sum, project) => {
+    const projectPayments = payments.filter((p) => p.project_id === project.id);
+    const paidAmount = projectPayments.reduce((total, p) => total + p.amount, 0);
+    const pending = Math.max(0, project.total_amount - paidAmount);
+    return sum + pending;
+  }, 0);
+
   // Handle export
   const handleExport = () => {
     const exportData = [
