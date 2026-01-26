@@ -68,54 +68,62 @@ export default function ArcChart({
         <PieChart className="w-5 h-5 text-teal-600" />
         {title}
       </h3>
-      <ResponsiveContainer width="100%" height={height}>
-        <RechartsPieChart>
-          <Pie
-            data={filteredData}
-            cx="50%"
-            cy="50%"
-            innerRadius={innerRadius}
-            outerRadius={outerRadius}
-            paddingAngle={3}
-            dataKey="value"
-            label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
-            labelLine={false}
-          >
-            {filteredData.map((entry, index) => (
-              <Cell 
-                key={`cell-${index}`} 
-                fill={COLORS[index % COLORS.length]} 
-                stroke="white"
-                strokeWidth={2}
-              />
-            ))}
-          </Pie>
-          <Tooltip
-            formatter={(value: number | undefined, name: string | undefined, props: any) => [
-              value !== undefined ? (typeof value === 'number' && value > 1000 ? `₹${value.toLocaleString()}` : value) : '0',
-              props.payload?.name || name || '',
-            ]}
-            contentStyle={{
-              backgroundColor: "white",
-              border: "none",
-              borderRadius: "12px",
-              padding: "12px",
-              boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            }}
-          />
-          {showLegend && (
-            <Legend
-              verticalAlign="bottom"
-              height={36}
-              formatter={(value, entry: any) => (
-                <span className="text-sm text-gray-700">
-                  {value}: {entry.payload.value}
-                </span>
-              )}
+      <div style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <RechartsPieChart>
+            <Pie
+              data={filteredData}
+              cx="50%"
+              cy="50%"
+              innerRadius={innerRadius}
+              outerRadius={outerRadius}
+              paddingAngle={3}
+              dataKey="value"
+              label={({ name, percent }) => `${name}: ${percent ? (percent * 100).toFixed(0) : 0}%`}
+              labelLine={false}
+            >
+              {filteredData.map((entry, index) => (
+                <Cell 
+                  key={`cell-${index}`} 
+                  fill={COLORS[index % COLORS.length]} 
+                  stroke="white"
+                  strokeWidth={2}
+                />
+              ))}
+            </Pie>
+            <Tooltip
+              formatter={(value: number | undefined) => {
+                if (value === undefined) return '0';
+                return typeof value === 'number' && value > 1000 
+                  ? `₹${(value / 1000).toFixed(1)}K` 
+                  : value.toLocaleString();
+              }}
+              labelFormatter={(label) => label}
+              contentStyle={{
+                backgroundColor: "#1f2937",
+                border: "none",
+                borderRadius: "12px",
+                padding: "12px 16px",
+                boxShadow: "0 8px 16px rgba(0,0,0,0.15)",
+                color: "white",
+              }}
+              cursor={{ fill: 'rgba(45, 212, 191, 0.1)' }}
             />
-          )}
-        </RechartsPieChart>
-      </ResponsiveContainer>
+            {showLegend && (
+              <Legend
+                verticalAlign="bottom"
+                height={36}
+                wrapperStyle={{ paddingTop: '16px' }}
+                formatter={(value: string, entry: any) => (
+                  <span className="text-sm text-gray-700">
+                    {value}: {entry.payload.value}
+                  </span>
+                )}
+              />
+            )}
+          </RechartsPieChart>
+        </ResponsiveContainer>
+      </div>
       {total > 0 && (
         <div className="mt-4 text-center border-t border-gray-100 pt-4">
           <p className="text-sm text-gray-500">

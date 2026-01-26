@@ -89,7 +89,7 @@ export default function AreaChart({
       </div>
 
       {/* Legend */}
-      <div className="flex items-center gap-6 mb-4">
+      <div className="flex items-center gap-6 mb-4 flex-wrap">
         <div className="flex items-center gap-2">
           <div className="w-3 h-3 rounded-full bg-teal-400"></div>
           <span className="text-sm text-gray-600">Payments Received</span>
@@ -116,7 +116,7 @@ export default function AreaChart({
         </div>
 
         {/* SVG Chart */}
-        <div className="ml-14 overflow-hidden relative">
+        <div className="ml-14 overflow-visible relative" style={{ minHeight: '280px' }}>
           <svg viewBox={`0 0 ${svgWidth} ${svgHeight + 30}`} className="w-full h-64">
             <defs>
               <linearGradient id="paymentGradient" x1="0%" y1="0%" x2="0%" y2="100%">
@@ -168,6 +168,19 @@ export default function AreaChart({
               <path d={projectCompletedPaths.linePath} fill="none" stroke="#3b82f6" strokeWidth="2" />
             )}
 
+            {/* Vertical guide line on hover */}
+            {hoveredPoint !== null && (
+              <line
+                x1={(hoveredPoint / (chartData.length - 1)) * svgWidth}
+                y1={0}
+                x2={(hoveredPoint / (chartData.length - 1)) * svgWidth}
+                y2={svgHeight}
+                stroke="#e5e7eb"
+                strokeWidth="2"
+                strokeDasharray="4 4"
+              />
+            )}
+
             {/* Interactive Data points with hover */}
             {chartData.map((d, i) => {
               const x = (i / (chartData.length - 1)) * svgWidth;
@@ -179,31 +192,22 @@ export default function AreaChart({
                   <circle
                     cx={x}
                     cy={yPayment}
-                    r="20"
+                    r="25"
                     fill="transparent"
                     className="cursor-pointer"
                     onMouseEnter={() => setHoveredPoint(i)}
                     onMouseLeave={() => setHoveredPoint(null)}
                   />
-                  {/* Vertical guide line on hover */}
-                  {isHovered && (
-                    <line
-                      x1={x}
-                      y1={0}
-                      x2={x}
-                      y2={svgHeight}
-                      stroke="#e5e7eb"
-                      strokeWidth="1"
-                      strokeDasharray="4 4"
-                    />
-                  )}
                   {/* Hover highlight ring */}
                   {isHovered && (
-                    <circle cx={x} cy={yPayment} r="10" fill="#2dd4bf" fillOpacity="0.2" />
+                    <>
+                      <circle cx={x} cy={yPayment} r="12" fill="#2dd4bf" fillOpacity="0.2" />
+                      <circle cx={x} cy={yPayment} r="8" fill="#2dd4bf" fillOpacity="0.3" />
+                    </>
                   )}
                   {/* Main point */}
-                  <circle cx={x} cy={yPayment} r={isHovered ? 6 : 4} fill="#2dd4bf" className="transition-all duration-150" />
-                  <circle cx={x} cy={yPayment} r={isHovered ? 3 : 2} fill="white" className="transition-all duration-150" />
+                  <circle cx={x} cy={yPayment} r={isHovered ? 7 : 4} fill="#2dd4bf" className="transition-all duration-150" />
+                  <circle cx={x} cy={yPayment} r={isHovered ? 3.5 : 2} fill="white" className="transition-all duration-150" />
                 </g>
               );
             })}
@@ -225,30 +229,30 @@ export default function AreaChart({
             ))}
           </svg>
 
-          {/* Tooltip */}
+          {/* Tooltip - Positioned outside SVG */}
           {hoveredPoint !== null && chartData[hoveredPoint] && (
             <div
-              className="absolute bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-xs z-10 pointer-events-none transform -translate-x-1/2"
+              className="absolute bg-gray-900 text-white px-4 py-3 rounded-lg shadow-xl text-xs z-50 pointer-events-none transform -translate-x-1/2 whitespace-nowrap"
               style={{
-                left: `${(hoveredPoint / (chartData.length - 1)) * 100}%`,
-                top: '10px',
+                left: `calc(3.5rem + (${hoveredPoint / (chartData.length - 1)} * (100% - 3.5rem)))`,
+                top: '-60px',
               }}
             >
-              <div className="font-semibold mb-1.5 text-sm">{chartData[hoveredPoint].fullMonth}</div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-teal-400"></div>
-                <span>Payments: ₹{chartData[hoveredPoint].payments.toLocaleString()}</span>
+              <div className="font-semibold mb-2 text-sm">{chartData[hoveredPoint].fullMonth || chartData[hoveredPoint].month}</div>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-teal-400"></div>
+                <span>₹{chartData[hoveredPoint].payments.toLocaleString()}</span>
               </div>
-              <div className="flex items-center gap-2 mb-1">
-                <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                <span>Projects Created: {chartData[hoveredPoint].projectsCreated}</span>
+              <div className="flex items-center gap-2 mb-1.5">
+                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500"></div>
+                <span>{chartData[hoveredPoint].projectsCreated} created</span>
               </div>
               <div className="flex items-center gap-2">
-                <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                <span>Completed: {chartData[hoveredPoint].projectsCompleted}</span>
+                <div className="w-2.5 h-2.5 rounded-full bg-blue-500"></div>
+                <span>{chartData[hoveredPoint].projectsCompleted} done</span>
               </div>
               {/* Arrow */}
-              <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+              <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
             </div>
           )}
         </div>

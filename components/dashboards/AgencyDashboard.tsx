@@ -401,6 +401,19 @@ export default function AgencyDashboard() {
                   strokeWidth="2"
                 />
 
+                {/* Vertical guide line on hover */}
+                {hoveredPoint !== null && (
+                  <line
+                    x1={(hoveredPoint / (chartData.length - 1)) * 600}
+                    y1={0}
+                    x2={(hoveredPoint / (chartData.length - 1)) * 600}
+                    y2={200}
+                    stroke="#e5e7eb"
+                    strokeWidth="2"
+                    strokeDasharray="4 4"
+                  />
+                )}
+
                 {/* Interactive Data points */}
                 {chartData.map((d, i) => {
                   const x = (i / (chartData.length - 1)) * 600;
@@ -412,7 +425,7 @@ export default function AgencyDashboard() {
                       <circle
                         cx={x}
                         cy={y}
-                        r="15"
+                        r="20"
                         fill="transparent"
                         className="cursor-pointer"
                         onMouseEnter={() => setHoveredPoint(i)}
@@ -420,7 +433,10 @@ export default function AgencyDashboard() {
                       />
                       {/* Hover highlight ring */}
                       {isHovered && (
-                        <circle cx={x} cy={y} r="8" fill="#2dd4bf" fillOpacity="0.2" />
+                        <>
+                          <circle cx={x} cy={y} r="10" fill="#2dd4bf" fillOpacity="0.2" />
+                          <circle cx={x} cy={y} r="6" fill="#2dd4bf" fillOpacity="0.3" />
+                        </>
                       )}
                       {/* Main point */}
                       <circle cx={x} cy={y} r={isHovered ? 6 : 4} fill="#2dd4bf" className="transition-all duration-150" />
@@ -433,27 +449,27 @@ export default function AgencyDashboard() {
               {/* Tooltip */}
               {hoveredPoint !== null && chartData[hoveredPoint] && (
                 <div
-                  className="absolute bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-xs z-10 pointer-events-none transform -translate-x-1/2"
+                  className="absolute bg-gray-900 text-white px-3 py-2 rounded-lg shadow-lg text-xs z-20 pointer-events-none transform -translate-x-1/2 whitespace-nowrap"
                   style={{
-                    left: `${(hoveredPoint / (chartData.length - 1)) * 100}%`,
-                    top: '-10px',
+                    left: `calc(${(hoveredPoint / (chartData.length - 1)) * 100}%)`,
+                    top: '-60px',
                   }}
                 >
-                  <div className="font-semibold mb-1">{chartData[hoveredPoint].fullMonth || chartData[hoveredPoint].month}</div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="font-semibold mb-1.5 text-sm">{chartData[hoveredPoint].fullMonth || chartData[hoveredPoint].month}</div>
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full bg-teal-400"></div>
-                    <span>Payments: ₹{chartData[hoveredPoint].payments.toLocaleString()}</span>
+                    <span>₹{chartData[hoveredPoint].payments.toLocaleString()}</span>
                   </div>
-                  <div className="flex items-center gap-2 mb-0.5">
+                  <div className="flex items-center gap-2 mb-1">
                     <div className="w-2 h-2 rounded-full bg-emerald-500"></div>
-                    <span>Projects Created: {chartData[hoveredPoint].projectsCreated}</span>
+                    <span>{chartData[hoveredPoint].projectsCreated} created</span>
                   </div>
                   <div className="flex items-center gap-2">
                     <div className="w-2 h-2 rounded-full bg-blue-500"></div>
-                    <span>Completed: {chartData[hoveredPoint].projectsCompleted}</span>
+                    <span>{chartData[hoveredPoint].projectsCompleted} done</span>
                   </div>
                   {/* Arrow */}
-                  <div className="absolute left-1/2 -translate-x-1/2 -bottom-1 w-2 h-2 bg-gray-900 rotate-45"></div>
+                  <div className="absolute left-1/2 -translate-x-1/2 bottom-0 translate-y-full w-2 h-2 bg-gray-900 rotate-45"></div>
                 </div>
               )}
 

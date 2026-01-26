@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Client, Project, Payment } from "@/lib/firebase/db";
 import { Users } from "lucide-react";
 import { format, subMonths } from "date-fns";
@@ -13,6 +13,8 @@ interface ClientDistributionProps {
 }
 
 export default function ClientDistribution({ clients, projects, payments, dateRange }: ClientDistributionProps) {
+  const [hoveredClientId, setHoveredClientId] = useState<string | null>(null);
+  
   // Calculate revenue per client
   const clientStats = useMemo(() => {
     const stats = clients.map((client) => {
@@ -96,26 +98,45 @@ export default function ClientDistribution({ clients, projects, payments, dateRa
         {clientStats.map((item, index) => {
           const percentage = totalRevenue > 0 ? (item.revenue / totalRevenue) * 100 : 0;
           const color = colors[index % colors.length];
+          const isHovered = hoveredClientId === item.client.id;
           
           return (
-            <div key={item.client.id} className="space-y-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`w-2 h-2 rounded-full ${color.bg}`}></div>
+            <div 
+              key={item.client.id} 
+              className="space-y-2 p-2 rounded-lg transition-colors duration-200"
+              onMouseEnter={() => item.client.id && setHoveredClientId(item.client.id)}
+              onMouseLeave={() => setHoveredClientId(null)}
+              style={{
+                backgroundColor: isHovered ? '#f9fafb' : 'transparent'
+              }}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 flex-1 min-w-0">
+                  <div className={`w-2.5 h-2.5 rounded-full ${color.bg}`}></div>
                   <span className="text-sm font-medium text-gray-700 truncate max-w-[120px]">
                     {item.client.name}
                   </span>
                 </div>
-                <span className="text-sm font-semibold text-gray-900">
-                  {percentage.toFixed(0)}%
-                </span>
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  <span className="text-xs font-semibold text-gray-600">
+                    ₹{(item.revenue / 1000).toFixed(0)}K
+                  </span>
+                  <span className="text-sm font-semibold text-gray-900 w-8 text-right">
+                    {percentage.toFixed(0)}%
+                  </span>
+                </div>
               </div>
-              <div className="w-full bg-gray-100 rounded-full h-2">
+              <div className="w-full bg-gray-100 rounded-full h-2.5 overflow-hidden cursor-pointer" title={`${item.client.name}: ₹${item.revenue.toLocaleString()} (${item.projectCount} projects)`}>
                 <div
-                  className={`${color.bg} h-2 rounded-full transition-all duration-500`}
-                  style={{ width: `${Math.max(percentage, 2)}%` }}
+                  className={`${color.bg} h-2.5 rounded-full transition-all duration-300`}
+                  style={{ width: `${Math.max(percentage, 3)}%` }}
                 />
               </div>
+              {isHovered && (
+                <div className="text-xs text-gray-500 pl-0.5">
+                  {item.projectCount} project{item.projectCount !== 1 ? 's' : ''}
+                </div>
+              )}
             </div>
           );
         })}
