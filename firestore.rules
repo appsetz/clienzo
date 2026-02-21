@@ -492,6 +492,52 @@ service cloud.firestore {
     }
     
     // ============================================
+    // LEADS COLLECTION
+    // ============================================
+    // Used by all user types (freelancer & agency):
+    // - Track potential clients / prospects
+    // - Supports bulk import from Excel
+    // ============================================
+    
+    match /leads/{leadId} {
+      // Users can read their own leads
+      allow read: if isAuthenticated() && ownsResource();
+      
+      // Users can create leads with their own user_id
+      allow create: if isAuthenticated() && ownsNewResource() &&
+        // Validate required fields
+        request.resource.data.user_id is string &&
+        request.resource.data.name is string &&
+        request.resource.data.status in ['new', 'contacted', 'qualified', 'lost', 'converted'] &&
+        request.resource.data.createdAt is timestamp &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('email' in request.resource.data) || request.resource.data.email is string) &&
+        (!('phone' in request.resource.data) || request.resource.data.phone is string) &&
+        (!('company' in request.resource.data) || request.resource.data.company is string) &&
+        (!('source' in request.resource.data) || request.resource.data.source is string) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string);
+      
+      // Users can update their own leads
+      allow update: if isAuthenticated() && ownsResource() &&
+        // Prevent changing user_id
+        userIdUnchanged() &&
+        // Validate required fields
+        request.resource.data.name is string &&
+        request.resource.data.status in ['new', 'contacted', 'qualified', 'lost', 'converted'] &&
+        request.resource.data.updatedAt is timestamp &&
+        // Validate optional fields
+        (!('email' in request.resource.data) || request.resource.data.email is string) &&
+        (!('phone' in request.resource.data) || request.resource.data.phone is string) &&
+        (!('company' in request.resource.data) || request.resource.data.company is string) &&
+        (!('source' in request.resource.data) || request.resource.data.source is string) &&
+        (!('notes' in request.resource.data) || request.resource.data.notes is string);
+      
+      // Users can delete their own leads
+      allow delete: if isAuthenticated() && ownsResource();
+    }
+    
+    // ============================================
     // DENY ALL OTHER COLLECTIONS
     // ============================================
     

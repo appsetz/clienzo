@@ -660,3 +660,93 @@ export const deleteInvestment = async (investmentId: string): Promise<void> => {
   await deleteDoc(doc(db, "investments", investmentId));
 };
 
+// Leads
+export interface Lead {
+  id?: string;
+  user_id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  company?: string;
+  source?: string;
+  status: "new" | "contacted" | "qualified" | "lost" | "converted";
+  notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export const getLeads = async (userId: string): Promise<Lead[]> => {
+  try {
+    const q = query(
+      collection(db, "leads"),
+      where("user_id", "==", userId),
+      orderBy("createdAt", "desc")
+    );
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+      createdAt: toDate(doc.data().createdAt),
+      updatedAt: toDate(doc.data().updatedAt),
+    })) as Lead[];
+  } catch (error: any) {
+    console.error("Error fetching leads:", error);
+    if (error?.code === "failed-precondition" || error?.message?.includes("index")) {
+      throw new Error(`Firestore index required for leads collection. ${error?.message || "Please create the index."}`);
+    }
+    throw error;
+  }
+};
+
+export const createLead = async (lead: Omit<Lead, "id" | "createdAt" | "updatedAt">): Promise<string> => {
+  const now = new Date();
+  const leadData: any = {
+    user_id: lead.user_id,
+    name: lead.name,
+    status: lead.status || "new",
+    createdAt: toTimestamp(now),
+    updatedAt: toTimestamp(now),
+  };
+  if (lead.email) leadData.email = lead.email;
+  if (lead.phone) leadData.phone = lead.phone;
+  if (lead.company) leadData.company = lead.company;
+  if (lead.source) leadData.source = lead.source;
+  if (lead.notes) leadData.notes = lead.notes;
+  const docRef = await addDoc(collection(db, "leads"), leadData);
+  return docRef.id;
+};
+
+export const updateLead = async (leadId: string, updates: Partial<Lead>): Promise<void> => {
+  const docRef = doc(db, "leads", leadId);
+  const updateData: any = {
+    ...updates,
+    updatedAt: toTimestamp(new Date()),
+  };
+  delete updateData.id;
+  if (updateData.createdAt) delete updateData.createdAt;
+  await updateDoc(docRef, updateData);
+};
+
+export const deleteLead = async (leadId: string): Promise<void> => {
+  await deleteDoc(doc(db, "leads", leadId));
+};
+
+export const bulkCreateLeads = async (leads: Omit<Lead, "id" | "createdAt" | "updatedAt">[]): Promise<void> => {
+  const now = new Date();
+  const promises = leads.map((lead) => {
+    const leadData: any = {
+      user_id: lead.user_id,
+      name: lead.name,
+      status: lead.status || "new",
+      createdAt: toTimestamp(now),
+      updatedAt: toTimestamp(now),
+    };
+    if (lead.email) leadData.email = lead.email;
+    if (lead.phone) leadData.phone = lead.phone;
+    if (lead.company) leadData.company = lead.company;
+    if (lead.source) leadData.source = lead.source;
+    if (lead.notes) leadData.notes = lead.notes;
+    return addDoc(collection(db, "leads"), leadData);
+  });
+  await Promise.all(promises);
+};
