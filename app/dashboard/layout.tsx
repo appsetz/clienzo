@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import Sidebar from "@/components/layout/Sidebar";
@@ -24,14 +23,13 @@ function DashboardLayoutInner({ children }: { children: React.ReactNode }) {
   );
 }
 
+/** NOTE: AuthProvider is already provided by the root app/layout.tsx — do NOT nest it here. */
 export default function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <AuthProvider>
-      <SidebarProvider>
-        <ProtectedRoute>
-          <DashboardLayoutInner>{children}</DashboardLayoutInner>
-        </ProtectedRoute>
-      </SidebarProvider>
-    </AuthProvider>
+    <SidebarProvider>
+      <ProtectedRoute>
+        <DashboardLayoutInner>{children}</DashboardLayoutInner>
+      </ProtectedRoute>
+    </SidebarProvider>
   );
 }

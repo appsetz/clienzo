@@ -1,6 +1,5 @@
 "use client";
 
-import { AuthProvider } from "@/contexts/AuthContext";
 import { SidebarProvider, useSidebar } from "@/contexts/SidebarContext";
 import ProtectedRoute from "@/components/layout/ProtectedRoute";
 import Sidebar from "@/components/layout/Sidebar";
@@ -26,15 +25,15 @@ function AppLayoutInner({ children }: { children: React.ReactNode }) {
     );
 }
 
-/** Shared layout used by all app sections (clients, leads, projects, payments, …) */
+/** Shared layout used by all app sections (clients, leads, projects, payments, …)
+ *  NOTE: AuthProvider is already provided by the root app/layout.tsx — do NOT nest it here.
+ */
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     return (
-        <AuthProvider>
-            <SidebarProvider>
-                <ProtectedRoute>
-                    <AppLayoutInner>{children}</AppLayoutInner>
-                </ProtectedRoute>
-            </SidebarProvider>
-        </AuthProvider>
+        <SidebarProvider>
+            <ProtectedRoute>
+                <AppLayoutInner>{children}</AppLayoutInner>
+            </ProtectedRoute>
+        </SidebarProvider>
     );
 }
